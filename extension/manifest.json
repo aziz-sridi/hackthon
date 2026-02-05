@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Hate Speech Prevention & Protection",
+  "version": "1.0.0",
+  "description": "Detect and filter hate speech on social media platforms",
+  "permissions": [
+    "storage",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "https://www.instagram.com/*",
+    "https://www.x.com/*",
+    "https://twitter.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/*",
+        "https://www.instagram.com/*",
+        "https://www.x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "utils/domDetection.js",
+        "contentScript.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

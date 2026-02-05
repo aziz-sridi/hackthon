@@ -1,0 +1,755 @@
+/* ============================================================
+   EXTENSION POPUP STYLES
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #e74c3c;
+  --primary-dark: #c0392b;
+  --primary-light: #f5a9a1;
+  --success-color: #27ae60;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --bg-light: #ecf0f1;
+  --bg-white: #ffffff;
+  --border-color: #bdc3c7;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  width: 400px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-light);
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.popup-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.popup-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.popup-header .version {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+
+.popup-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--bg-white);
+}
+
+.popup-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.popup-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.popup-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.popup-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+
+.feature-section,
+.settings-section,
+.info-section,
+.debug-section {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.section-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   TOGGLE SWITCH
+   ============================================================ */
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  display: inline-block;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: var(--border-color);
+  border-radius: 12px;
+  transition: background-color 0.3s;
+  margin: 0 4px;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s;
+  box-shadow: var(--shadow);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--success-color);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  left: 22px;
+}
+
+/* ============================================================
+   STATUS BADGE
+   ============================================================ */
+
+.feature-status {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+}
+
+.status-badge.active {
+  background-color: rgba(39, 174, 96, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.status-badge.inactive {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+
+.setting-item {
+  margin-bottom: 12px;
+}
+
+.setting-item label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.setting-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: white;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.2);
+}
+
+.setting-help {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   CHECKBOXES
+   ============================================================ */
+
+.platform-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.checkbox-label input {
+  margin-right: 8px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* ============================================================
+   INFO LIST
+   ============================================================ */
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+
+.info-list li {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  padding-left: 16px;
+  position: relative;
+}
+
+.info-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.info-list strong {
+  font-weight: 600;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color);
+}
+
+/* ============================================================
+   DEBUG SECTION
+   ============================================================ */
+
+.debug-section {
+  border-left-color: var(--warning-color);
+}
+
+.debug-section h3 {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.debug-info {
+  display: none;
+  padding: 8px;
+  background-color: rgba(39, 174, 96, 0.1);
+  border-left: 2px solid var(--success-color);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--success-color);
+  margin-top: 8px;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.popup-footer {
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-light);
+}
+
+/* ============================================================
+   MODAL STYLES (for content script)
+   ============================================================ */
+
+.hate-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999999;
+}
+
+.hate-modal-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 1000000;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.hate-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.hate-modal-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.hate-modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hate-modal-close:hover {
+  opacity: 0.8;
+}
+
+.hate-modal-content {
+  padding: 20px;
+}
+
+.hate-modal-message {
+  font-size: 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.hate-modal-confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.confidence-label {
+  font-weight: 600;
+}
+
+.confidence-bar {
+  flex: 1;
+  height: 8px;
+  background-color: var(--bg-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success-color), var(--warning-color), var(--danger-color));
+  transition: width 0.3s;
+}
+
+.confidence-value {
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.hate-modal-preview {
+  background-color: var(--bg-light);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.hate-preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.hate-preview-text {
+  font-size: 13px;
+  font-style: italic;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.hate-modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-light);
+  border-radius: 0 0 12px 12px;
+}
+
+.hate-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hate-btn-cancel {
+  background-color: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.hate-btn-cancel:hover {
+  background-color: var(--bg-light);
+}
+
+.hate-btn-rewrite {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.hate-btn-rewrite:hover {
+  background-color: #e67e22;
+}
+
+.hate-btn-send {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.hate-btn-send:hover {
+  background-color: var(--primary-dark);
+}
+
+.hate-btn-accept {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.hate-btn-accept:hover {
+  background-color: #229954;
+}
+
+.hate-btn-edit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.hate-btn-edit:hover {
+  background-color: var(--primary-dark);
+}
+
+/* ============================================================
+   COMPARISON VIEW
+   ============================================================ */
+
+.hate-modal-comparison {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.comparison-item {
+  flex: 1;
+}
+
+.comparison-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.comparison-text {
+  font-size: 13px;
+  background-color: var(--bg-light);
+  padding: 10px;
+  border-radius: 6px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.comparison-text.original {
+  color: var(--danger-color);
+  font-style: italic;
+}
+
+.comparison-arrow {
+  font-size: 24px;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.hate-rewrite-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.hate-rewrite-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.2);
+}
+
+/* ============================================================
+   CONTENT FILTERING STYLES
+   ============================================================ */
+
+.hate-blurred {
+  filter: blur(5px);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hate-blurred:hover {
+  opacity: 0.85;
+}
+
+.hate-blurred-revealed {
+  filter: none;
+  opacity: 1;
+}
+
+.hate-content-warning {
+  padding: 12px;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-left: 3px solid var(--warning-color);
+  border-radius: 4px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.hate-content-alert {
+  padding: 10px;
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 4px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+.hate-reveal-btn {
+  padding: 6px 12px;
+  margin-top: 8px;
+  background-color: var(--warning-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hate-reveal-btn:hover {
+  background-color: #e67e22;
+}
+
+/* ============================================================
+   LOADING STATES
+   ============================================================ */
+
+.hate-loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--primary-color);
+}
+
+.loading-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  animation: loading-pulse 1.4s infinite;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--bg-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+.hate-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+@keyframes loading-pulse {
+  0%, 60%, 100% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 600px) {
+  body {
+    width: 100%;
+  }
+
+  .hate-modal-container {
+    max-width: 95%;
+  }
+
+  .hate-modal-comparison {
+    flex-direction: column;
+  }
+
+  .comparison-arrow {
+    transform: rotate(90deg);
+  }
+
+  .hate-btn {
+    padding: 8px;
+  }
+
+  .hate-modal-header h2 {
+    font-size: 16px;
+  }
+}
