@@ -1,4 +1,6 @@
 // Content script for DOM interaction and hate speech detection
+console.log('🚀 [HATE-DETECT] Content script file loaded!');
+console.log('🚀 [HATE-DETECT] Current URL:', window.location.href);
 
 // Settings
 let settings = {
@@ -14,9 +16,6 @@ let settings = {
 };
 
 const HATE_BADGE_TEXT = 'HS';
-const HATE_SCORE_UNAVAILABLE = 'No text to score';
-const HATE_SCORE_PENDING = 'Analyzing...';
-const HATE_SCORE_ERROR = 'Score unavailable';
 
 function injectIndicatorStyles() {
   if (document.getElementById('hateDetectStyles')) return;
@@ -24,65 +23,19 @@ function injectIndicatorStyles() {
   const style = document.createElement('style');
   style.id = 'hateDetectStyles';
   style.textContent = `
+    .hate-detect-input-wrapper {
+      position: relative !important;
+      display: inline-block !important;
+      width: 100%;
+    }
+
     .hate-detect-ready {
-      outline: 1px solid rgba(231, 76, 60, 0.35);
-      outline-offset: 2px;
+      padding-right: 35px !important;
     }
 
     .hate-detect-active {
-      outline: 2px solid rgba(231, 76, 60, 0.8);
+      outline: 2px solid rgba(231, 76, 60, 0.3);
       outline-offset: 2px;
-      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
-    }
-
-    .hate-detect-badge {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      background: #e74c3c;
-      color: #ffffff;
-      font-size: 10px;
-      line-height: 1;
-      padding: 4px 6px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      z-index: 2147483647;
-      pointer-events: none;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    }
-
-    .hate-detect-badge.clickable {
-      pointer-events: auto;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .hate-detect-tooltip {
-      position: absolute;
-      top: 20px;
-      right: 0;
-      background: #ffffff;
-      color: #2c3e50;
-      border: 1px solid rgba(231, 76, 60, 0.25);
-      border-radius: 8px;
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-      padding: 8px 10px;
-      font-size: 11px;
-      min-width: 140px;
-      max-width: 200px;
-      z-index: 2147483647;
-    }
-
-    .hate-detect-tooltip .score-line {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .hate-detect-tooltip .score-title {
-      font-weight: 600;
-      color: #e74c3c;
-      margin-bottom: 4px;
     }
   `;
 
@@ -94,42 +47,89 @@ chrome.storage.sync.get(null, (data) => {
   if (data && Object.keys(data).length > 0) {
     settings = { ...settings, ...data };
   }
-  initializeExtension();
+  console.log('📦 [HATE-DETECT] Settings loaded:', settings);
+  
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    console.log('⏳ [HATE-DETECT] DOM still loading, waiting...');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ [HATE-DETECT] DOM loaded, initializing...');
+      initializeExtension();
+    });
+  } else {
+    console.log('✅ [HATE-DETECT] DOM already loaded, initializing immediately...');
+    initializeExtension();
+  }
 });
 
 /**
  * Initialize the extension
  */
 function initializeExtension() {
-  console.log('Hate Speech Prevention Extension loaded');
+  console.log('🚀 [HATE-DETECT] Extension loaded and initializing...');
+  console.log('🚀 [HATE-DETECT] Settings:', settings);
   
   if (settings.feature1Enabled) {
+    console.log('✅ [HATE-DETECT] Feature 1 (Pre-Send Detection) enabled');
     setupPreSendDetection();
+  } else {
+    console.log('❌ [HATE-DETECT] Feature 1 disabled');
   }
   
   if (settings.feature2Enabled) {
+    console.log('✅ [HATE-DETECT] Feature 2 (Incoming Filtering) enabled');
     setupIncomingFiltering();
+  } else {
+    console.log('❌ [HATE-DETECT] Feature 2 disabled');
   }
+  
+  console.log('✅ [HATE-DETECT] Initialization complete');
 }
 
 /**
  * FEATURE 1: Pre-Send Hate Detection
  */
 function setupPreSendDetection() {
+  console.log('🔧 [HATE-DETECT] Setting up pre-send detection...');
+  console.log('🌐 [HATE-DETECT] Current site:', window.location.hostname);
+  
   injectIndicatorStyles();
+  console.log('✅ [HATE-DETECT] Styles injected');
 
-  // Monitor for editable elements
-  const observer = new MutationObserver(() => {
+  document.addEventListener('focusin', handleDocumentFocusIn, true);
+  console.log('✅ [HATE-DETECT] Focus listener added');
+
+  // Monitor for editable elements with more aggressive observation for dynamic sites
+  const observer = new MutationObserver((mutations) => {
+    console.log(`👀 [HATE-DETECT] DOM mutation detected (${mutations.length} changes), re-scanning for inputs`);
     attachSendListeners();
   });
 
   observer.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true, // Watch for attribute changes too
+    attributeFilter: ['contenteditable', 'role', 'aria-label', 'placeholder'] // Instagram changes these
   });
+  console.log('✅ [HATE-DETECT] Mutation observer started (watching attributes)');
 
   // Initial setup
+  console.log('🔍 [HATE-DETECT] Scanning page for initial editable elements...');
   attachSendListeners();
+  
+  // For dynamic sites like Instagram, re-scan after delays
+  const isInstagram = window.location.hostname.includes('instagram');
+  if (isInstagram) {
+    console.log('📸 [HATE-DETECT] Instagram detected - using delayed scanning');
+    setTimeout(() => {
+      console.log('🔍 [HATE-DETECT] Instagram: Re-scanning after 2s...');
+      attachSendListeners();
+    }, 2000);
+    setTimeout(() => {
+      console.log('🔍 [HATE-DETECT] Instagram: Re-scanning after 5s...');
+      attachSendListeners();
+    }, 5000);
+  }
 }
 
 /**
@@ -137,9 +137,54 @@ function setupPreSendDetection() {
  */
 function attachSendListeners() {
   const editables = getEditableElements();
+  const hostname = window.location.hostname;
+  console.log(`📝 [HATE-DETECT] Found ${editables.length} editable elements on ${hostname}:`);
   
-  editables.forEach(element => {
-    if (element.__hateCheckListener) return; // Already attached
+  if (editables.length === 0) {
+    console.warn('⚠️ [HATE-DETECT] No editable elements found on page');
+    console.log('🔍 [HATE-DETECT] Trying manual detection for Instagram...');
+    
+    // Manual detection for Instagram
+    if (hostname.includes('instagram')) {
+      const manualSelectors = [
+        'textarea',
+        '[contenteditable="true"]',
+        '[role="textbox"]',
+        'div[contenteditable]',
+        'form textarea',
+        'form [contenteditable]'
+      ];
+      
+      manualSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        console.log(`  - ${selector}: found ${elements.length}`);
+        elements.forEach((el, idx) => {
+          console.log(`    Element ${idx}:`, {
+            tag: el.tagName,
+            contenteditable: el.getAttribute('contenteditable'),
+            role: el.getAttribute('role'),
+            ariaLabel: el.getAttribute('aria-label'),
+            placeholder: el.getAttribute('placeholder'),
+            visible: el.offsetHeight > 0
+          });
+        });
+      });
+    }
+  }
+  
+  editables.forEach((element, index) => {
+    if (element.__hateCheckListener) {
+      console.log(`⏭️ [HATE-DETECT] Element ${index} already has listener, skipping`);
+      return; // Already attached
+    }
+    
+    console.log(`✅ [HATE-DETECT] Attaching listeners to element ${index}:`, {
+      tag: element.tagName,
+      contenteditable: element.getAttribute('contenteditable'),
+      role: element.getAttribute('role'),
+      ariaLabel: element.getAttribute('aria-label'),
+      placeholder: element.getAttribute('placeholder')
+    });
     
     // Attach keyboard listener for Enter/Ctrl+Enter
     element.addEventListener('keydown', handleKeyboardSend, true);
@@ -150,6 +195,7 @@ function attachSendListeners() {
     // Find associated send button
     const sendButton = findSendButton(element);
     if (sendButton && !sendButton.__hateCheckListener) {
+      console.log(`🔘 [HATE-DETECT] Found send button for element ${index}`);
       sendButton.addEventListener('click', (e) => handleSendButtonClick(e, element), true);
       sendButton.__hateCheckListener = true;
     }
@@ -157,173 +203,746 @@ function attachSendListeners() {
 }
 
 function markEditableForDetection(element) {
-  if (!element || element.__hateDetectMarked) return;
+  if (!element) {
+    console.warn('⚠️ [HATE-DETECT] markEditableForDetection called with null element');
+    return;
+  }
+  
+  if (element.__hateDetectMarked) {
+    console.log('⏭️ [HATE-DETECT] Element already marked for detection');
+    return;
+  }
 
+  console.log('🎯 [HATE-DETECT] Marking element for detection (listeners only, no icon yet):', element);
   element.classList.add('hate-detect-ready');
+
+  // Don't inject icon yet - only on focus
+  // Icon will be injected in handleEditableFocus
 
   element.addEventListener('focus', handleEditableFocus, true);
   element.addEventListener('blur', handleEditableBlur, true);
-  element.addEventListener('input', handleEditableInput, true);
+  element.addEventListener('input', () => scheduleScoreUpdate(element));
   element.__hateDetectMarked = true;
+  
+  console.log('✅ [HATE-DETECT] Element marked successfully (ready for focus)');
+}
+
+// Track currently focused element to manage single icon
+let currentFocusedElement = null;
+let isClickingIcon = false; // Flag to prevent blur-based removal during icon clicks
+
+function handleDocumentFocusIn(event) {
+  console.log('👁️ [HATE-DETECT] Focus event detected on:', event.target);
+  const editable = getEditableFromEventTarget(event.target);
+  if (editable) {
+    console.log('✅ [HATE-DETECT] Editable element focused:', editable);
+    markEditableForDetection(editable);
+    
+    // Remove icon from previously focused element
+    if (currentFocusedElement && currentFocusedElement !== editable) {
+      console.log('🔄 [HATE-DETECT] Removing icon from previous element');
+      removeIconFromElement(currentFocusedElement);
+      currentFocusedElement.classList.remove('hate-detect-active');
+    }
+    
+    currentFocusedElement = editable;
+    editable.classList.add('hate-detect-active');
+    
+    // Inject icon only for focused element
+    if (!editable.__hateDetectIcon) {
+      console.log('🎨 [HATE-DETECT] Injecting icon for focused element...');
+      injectIconIntoInput(editable);
+    }
+    
+    scheduleScoreUpdate(editable);
+  } else {
+    console.log('⏭️ [HATE-DETECT] Focused element is not editable');
+  }
 }
 
 function handleEditableFocus(event) {
-  const element = event.target;
+  console.log('🎯 [HATE-DETECT] Element focus event:', event.target);
+  const element = getEditableFromEventTarget(event.target) || event.target;
+  
+  // Remove icon from previously focused element
+  if (currentFocusedElement && currentFocusedElement !== element) {
+    console.log('🔄 [HATE-DETECT] Removing icon from previous element');
+    removeIconFromElement(currentFocusedElement);
+    currentFocusedElement.classList.remove('hate-detect-active');
+  }
+  
+  currentFocusedElement = element;
   element.classList.add('hate-detect-active');
-  showDetectionBadge(element);
-  scheduleScoreUpdate(element);
+  
+  // Inject icon only for focused element
+  if (!element.__hateDetectIcon) {
+    console.log('🎨 [HATE-DETECT] Injecting icon for newly focused element...');
+    injectIconIntoInput(element);
+  }
+  
+  console.log('✅ [HATE-DETECT] Added active class and icon to element');
 }
 
 function handleEditableBlur(event) {
-  const element = event.target;
-  element.classList.remove('hate-detect-active');
-  removeDetectionBadge(element);
-  clearScoreTimer(element);
-}
-
-function handleEditableInput(event) {
-  scheduleScoreUpdate(event.target);
-}
-
-function showDetectionBadge(element) {
-  if (!element || element.__hateDetectBadge) return;
-
-  const parent = element.parentElement;
-  if (!parent) return;
-
-  const computed = window.getComputedStyle(parent);
-  if (computed.position === 'static') {
-    parent.__hatePrevPosition = parent.style.position || '';
-    parent.style.position = 'relative';
-  }
-
-  const badge = document.createElement('span');
-  badge.className = 'hate-detect-badge clickable';
-  badge.textContent = HATE_BADGE_TEXT;
-  badge.setAttribute('title', 'Hate Speech Score');
-  badge.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleScoreTooltip(element);
-  });
-  parent.appendChild(badge);
-  element.__hateDetectBadge = badge;
-}
-
-function removeDetectionBadge(element) {
-  if (!element || !element.__hateDetectBadge) return;
-
-  const badge = element.__hateDetectBadge;
-  if (element.__hateDetectTooltip) {
-    element.__hateDetectTooltip.remove();
-    delete element.__hateDetectTooltip;
-  }
-  const parent = badge.parentElement;
-  badge.remove();
-  delete element.__hateDetectBadge;
-
-  if (parent && parent.__hatePrevPosition !== undefined) {
-    parent.style.position = parent.__hatePrevPosition;
-    delete parent.__hatePrevPosition;
-  }
-}
-
-function toggleScoreTooltip(element) {
-  if (!element.__hateDetectBadge) return;
-
-  if (element.__hateDetectTooltip) {
-    element.__hateDetectTooltip.remove();
-    delete element.__hateDetectTooltip;
+  console.log('👋 [HATE-DETECT] Element blur event:', event.target);
+  
+  // Don't remove icon if we're clicking on it
+  if (isClickingIcon) {
+    console.log('🎯 [HATE-DETECT] User is clicking icon, keeping it visible');
     return;
   }
-
-  const tooltip = document.createElement('div');
-  tooltip.className = 'hate-detect-tooltip';
-  tooltip.innerHTML = renderScoreTooltip(element.__hateDetectScore);
-  element.__hateDetectBadge.appendChild(tooltip);
-  element.__hateDetectTooltip = tooltip;
-
-  if (!element.__hateDetectScore) {
-    updateScoreForElement(element);
-  }
+  
+  const element = getEditableFromEventTarget(event.target) || event.target;
+  
+  // Small delay to allow icon clicks to complete
+  setTimeout(() => {
+    // Check again if user is still interacting with icon
+    if (isClickingIcon) {
+      console.log('🎯 [HATE-DETECT] Still interacting with icon, keeping visible');
+      return;
+    }
+    
+    element.classList.remove('hate-detect-active');
+    
+    // Remove icon when input loses focus (keeps UI clean)
+    console.log('🧹 [HATE-DETECT] Removing icon from blurred element');
+    removeIconFromElement(element);
+    
+    if (currentFocusedElement === element) {
+      currentFocusedElement = null;
+    }
+    
+    console.log('✅ [HATE-DETECT] Removed active class and icon from element');
+  }, 150); // 150ms delay allows click events to register
 }
 
-function renderScoreTooltip(score) {
-  if (!score) {
-    return `
-      <div class="score-title">Detection</div>
-      <div>${HATE_SCORE_UNAVAILABLE}</div>
-    `;
+function getEditableFromEventTarget(target) {
+  if (!target) return null;
+  if (target.closest) {
+    const editable = target.closest('[contenteditable="true"], [contenteditable="plaintext-only"], textarea, input[type="text"], [role="textbox"]');
+    if (editable) return editable;
   }
+  return null;
+}
 
-  if (score.status === 'pending') {
-    return `
-      <div class="score-title">Detection</div>
-      <div>${HATE_SCORE_PENDING}</div>
-    `;
+/**
+ * Inject a Grammarly-style icon into an input field
+ */
+function injectIconIntoInput(element) {
+  if (!element) {
+    console.error('❌ [HATE-DETECT] Cannot inject icon: element is null');
+    return;
   }
-
-  if (score.status === 'error') {
-    return `
-      <div class="score-title">Detection</div>
-      <div>${HATE_SCORE_ERROR}</div>
-    `;
+  
+  if (element.__hateDetectIcon) {
+    console.log('⏭️ [HATE-DETECT] Icon already exists for element');
+    return;
   }
+  
+  console.log('🔨 [HATE-DETECT] Creating icon for element:', element);
 
-  const percent = Math.round((score.confidence || 0) * 100);
-  const category = score.category || 'neutral';
-  return `
-    <div class="score-title">Detection</div>
-    <div class="score-line"><span>Score</span><strong>${percent}%</strong></div>
-    <div class="score-line"><span>Category</span><strong>${category}</strong></div>
+  const icon = document.createElement('div');
+  icon.className = 'hate-detect-icon';
+  icon.__hateDetectElement = element;
+  
+  // Create shadow DOM for the icon
+  const shadow = icon.attachShadow({ mode: 'open' });
+  
+  const style = document.createElement('style');
+  style.textContent = `
+    :host {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 999999;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    
+    .icon-button {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+      transition: all 0.2s ease;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+    }
+    
+    .icon-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.5);
+    }
+    
+    .icon-button:active {
+      transform: scale(0.95);
+    }
+    
+    .icon-text {
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      user-select: none;
+    }
+    
+    .score-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #f39c12;
+      color: white;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 2px 4px;
+      border-radius: 8px;
+      min-width: 16px;
+      text-align: center;
+      border: 1px solid white;
+      display: none;
+    }
+    
+    .score-badge.show {
+      display: block;
+    }
+    
+    .score-badge.high {
+      background: #e74c3c;
+    }
+    
+    .score-badge.medium {
+      background: #f39c12;
+    }
+    
+    .score-badge.low {
+      background: #27ae60;
+    }
   `;
-}
-
-function scheduleScoreUpdate(element) {
-  if (!element) return;
-  clearScoreTimer(element);
-  element.__hateDetectScoreTimer = setTimeout(() => {
-    updateScoreForElement(element);
-  }, 400);
-}
-
-function clearScoreTimer(element) {
-  if (element && element.__hateDetectScoreTimer) {
-    clearTimeout(element.__hateDetectScoreTimer);
-    delete element.__hateDetectScoreTimer;
-  }
-}
-
-async function updateScoreForElement(element) {
-  if (!element) return;
-  const text = getEditableText(element);
-
-  if (!text || text.trim().length === 0) {
-    element.__hateDetectScore = null;
-    updateTooltipContent(element);
+  shadow.appendChild(style);
+  
+  const button = document.createElement('div');
+  button.className = 'icon-button';
+  button.innerHTML = '<span class="icon-text">HS</span>';
+  
+  const scoreBadge = document.createElement('div');
+  scoreBadge.className = 'score-badge';
+  scoreBadge.textContent = '0';
+  button.appendChild(scoreBadge);
+  
+  shadow.appendChild(button);
+  
+  // Position the icon
+  icon.style.cssText = `
+    position: absolute !important;
+    pointer-events: auto !important;
+    z-index: 999999 !important;
+  `;
+  
+  // Prevent icon clicks from blurring the input
+  icon.addEventListener('mousedown', (e) => {
+    console.log('🖱️ [HATE-DETECT] Icon mousedown - preventing input blur');
+    e.preventDefault(); // Prevents input from losing focus
+    e.stopPropagation();
+    isClickingIcon = true;
+  });
+  
+  icon.addEventListener('mouseup', (e) => {
+    console.log('🖱️ [HATE-DETECT] Icon mouseup');
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isClickingIcon = false;
+    }, 200);
+  });
+  
+  // Click handler on the button inside shadow DOM
+  button.addEventListener('click', (e) => {
+    console.log('👆 [HATE-DETECT] Icon button clicked');
+    e.preventDefault();
+    e.stopPropagation();
+    isClickingIcon = true;
+    handleIconClick(element, shadow);
+    // Reset flag after handler completes
+    setTimeout(() => {
+      isClickingIcon = false;
+    }, 300);
+  });
+  
+  // Also handle clicks on the shadow root container
+  icon.addEventListener('click', (e) => {
+    console.log('👆 [HATE-DETECT] Icon container clicked');
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  
+  // Position and append icon
+  console.log('📍 [HATE-DETECT] Positioning and appending icon to body...');
+  
+  if (!document.body) {
+    console.error('❌ [HATE-DETECT] document.body is not available yet!');
+    // Retry after a short delay
+    setTimeout(() => injectIconIntoInput(element), 100);
     return;
   }
+  
+  positionIcon(icon, element);
+  document.body.appendChild(icon);
+  console.log('✅ [HATE-DETECT] Icon appended to DOM');
+  
+  element.__hateDetectIcon = icon;
+  icon.__hateDetectShadow = shadow;
+  
+  // Update position on scroll/resize
+  const updatePosition = () => positionIcon(icon, element);
+  window.addEventListener('scroll', updatePosition, true);
+  window.addEventListener('resize', updatePosition, true);
+  icon.__hateDetectPositionUpdate = updatePosition;
+  
+  console.log('🎉 [HATE-DETECT] Icon injection complete and visible!');
+}
 
-  element.__hateDetectScore = { status: 'pending' };
-  updateTooltipContent(element);
+/**
+ * Remove icon from an element
+ */
+function removeIconFromElement(element) {
+  if (!element) {
+    console.warn('⚠️ [HATE-DETECT] Cannot remove icon: element is null');
+    return;
+  }
+  
+  if (!element.__hateDetectIcon) {
+    console.log('⏭️ [HATE-DETECT] No icon to remove from element');
+    return;
+  }
+  
+  console.log('🗑️ [HATE-DETECT] Removing icon from element:', element);
+  
+  const icon = element.__hateDetectIcon;
+  
+  // Remove event listeners
+  if (icon.__hateDetectPositionUpdate) {
+    window.removeEventListener('scroll', icon.__hateDetectPositionUpdate, true);
+    window.removeEventListener('resize', icon.__hateDetectPositionUpdate, true);
+    delete icon.__hateDetectPositionUpdate;
+  }
+  
+  // Remove from DOM
+  if (icon.parentNode) {
+    icon.parentNode.removeChild(icon);
+  }
+  
+  // Clear references
+  delete element.__hateDetectIcon;
+  delete icon.__hateDetectShadow;
+  
+  // Clear any pending score update timers
+  if (scoreUpdateTimers.has(element)) {
+    clearTimeout(scoreUpdateTimers.get(element));
+    scoreUpdateTimers.delete(element);
+    console.log('⏰ [HATE-DETECT] Cleared pending score update timer');
+  }
+  
+  console.log('✅ [HATE-DETECT] Icon removed and cleaned up');
+}
 
+/**
+ * Position icon relative to input field
+ */
+function positionIcon(icon, element) {
+  if (!element || !icon) {
+    console.warn('⚠️ [HATE-DETECT] Cannot position icon: missing element or icon');
+    return;
+  }
+  
+  const rect = element.getBoundingClientRect();
+  console.log('📐 [HATE-DETECT] Element rect:', rect);
+  
+  if (rect.width === 0 && rect.height === 0) {
+    console.log('⚠️ [HATE-DETECT] Element has no size, hiding icon');
+    icon.style.display = 'none';
+    return;
+  }
+  
+  const top = rect.bottom - 32;
+  const left = rect.right - 32;
+  
+  console.log(`📍 [HATE-DETECT] Positioning icon at top: ${top}px, left: ${left}px`);
+  
+  icon.style.display = 'block';
+  icon.style.position = 'fixed';
+  icon.style.top = `${top}px`;
+  icon.style.left = `${left}px`;
+  
+  console.log('✅ [HATE-DETECT] Icon positioned');
+}
+
+/**
+ * Handle icon click - show hate score and suggestions
+ */
+let currentScoreData = {};
+
+async function handleIconClick(element, shadow) {
+  console.log('👆 [HATE-DETECT] Icon clicked!', element);
+  
+  // Make sure we keep the icon visible
+  isClickingIcon = true;
+  
+  const text = getEditableText(element);
+  console.log('📄 [HATE-DETECT] Extracted text:', text);
+  
+  if (!text || text.trim().length === 0) {
+    console.log('⚠️ [HATE-DETECT] No text to analyze');
+    showTooltip(shadow, 'No text to analyze', 'info');
+    return;
+  }
+  
+  // Show loading state
+  console.log('⏳ [HATE-DETECT] Analyzing text...');
+  showTooltip(shadow, 'Analyzing text...', 'loading');
+  
   try {
     const result = await apiClient.detectHateSpeech(text);
-    element.__hateDetectScore = {
-      status: 'ok',
-      confidence: result.confidence,
-      category: result.category,
-      isHate: result.is_hate
-    };
+    console.log('✅ [HATE-DETECT] Analysis complete:', result);
+    const hateScore = Math.round((result.confidence || 0) * 100);
+    console.log('📊 [HATE-DETECT] Hate score:', hateScore);
+    
+    // Store score data
+    currentScoreData[element] = result;
+    
+    // Update score badge
+    updateScoreBadge(shadow, hateScore, result.is_hate);
+    
+    // Show detailed tooltip
+    const suggestions = generateSuggestions(result);
+    showDetailedScore(shadow, hateScore, result.is_hate, suggestions);
+    
+    // Reset clicking flag after tooltip is shown
+    setTimeout(() => {
+      isClickingIcon = false;
+    }, 500);
+    
   } catch (error) {
-    element.__hateDetectScore = { status: 'error' };
+    console.error('❌ [HATE-DETECT] Error analyzing text:', error);
+    console.error('❌ [HATE-DETECT] Error stack:', error.stack);
+    showTooltip(shadow, 'Error analyzing text', 'error');
+    // Reset clicking flag on error too
+    setTimeout(() => {
+      isClickingIcon = false;
+    }, 500);
   }
-
-  updateTooltipContent(element);
 }
 
-function updateTooltipContent(element) {
-  if (!element || !element.__hateDetectTooltip) return;
-  element.__hateDetectTooltip.innerHTML = renderScoreTooltip(element.__hateDetectScore);
+/**
+ * Update the score badge on the icon
+ */
+function updateScoreBadge(shadow, score, isHate) {
+  const badge = shadow.querySelector('.score-badge');
+  if (!badge) return;
+  
+  badge.textContent = score;
+  badge.classList.add('show');
+  
+  // Remove old classes
+  badge.classList.remove('high', 'medium', 'low');
+  
+  // Add appropriate class based on score
+  if (score >= 70) {
+    badge.classList.add('high');
+  } else if (score >= 40) {
+    badge.classList.add('medium');
+  } else {
+    badge.classList.add('low');
+  }
+}
+
+/**
+ * Generate suggestions based on hate speech detection result
+ */
+function generateSuggestions(result) {
+  const suggestions = [];
+  
+  if (result.is_hate) {
+    suggestions.push('Consider rephrasing your message to be more respectful');
+    suggestions.push('Avoid using offensive or discriminatory language');
+    suggestions.push('Focus on the issue rather than personal attacks');
+  } else {
+    suggestions.push('Your message looks good!');
+    suggestions.push('Keep maintaining a respectful tone');
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Show detailed score tooltip
+ */
+function showDetailedScore(shadow, score, isHate, suggestions) {
+  // Remove existing tooltip
+  const existingTooltip = shadow.querySelector('.score-tooltip');
+  if (existingTooltip) {
+    existingTooltip.remove();
+  }
+  
+  const tooltip = document.createElement('div');
+  tooltip.className = 'score-tooltip';
+  
+  const tooltipStyle = document.createElement('style');
+  tooltipStyle.textContent = `
+    .score-tooltip {
+      position: absolute;
+      bottom: 35px;
+      right: 0;
+      width: 280px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      z-index: 999999;
+      animation: slideIn 0.2s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .tooltip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .tooltip-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    .close-btn {
+      cursor: pointer;
+      font-size: 18px;
+      color: #7f8c8d;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    
+    .close-btn:hover {
+      color: #2c3e50;
+    }
+    
+    .score-display {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    
+    .score-number {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .score-number.high { color: #e74c3c; }
+    .score-number.medium { color: #f39c12; }
+    .score-number.low { color: #27ae60; }
+    
+    .score-label {
+      font-size: 12px;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .suggestions {
+      margin-top: 12px;
+    }
+    
+    .suggestions-title {
+      font-size: 12px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+    
+    .suggestion-item {
+      font-size: 11px;
+      color: #555;
+      padding: 6px 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+  `;
+  shadow.appendChild(tooltipStyle);
+  
+  const scoreClass = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+  const status = isHate ? 'Warning' : 'Safe';
+  
+  tooltip.innerHTML = `
+    <div class="tooltip-header">
+      <div class="tooltip-title">Hate Speech Score</div>
+      <div class="close-btn">×</div>
+    </div>
+    <div class="score-display">
+      <div class="score-number ${scoreClass}">${score}</div>
+      <div class="score-label">${status}</div>
+    </div>
+    <div class="suggestions">
+      <div class="suggestions-title">Suggestions:</div>
+      ${suggestions.map(s => `<div class="suggestion-item">• ${s}</div>`).join('')}
+    </div>
+  `;
+  
+  shadow.appendChild(tooltip);
+  
+  // Prevent tooltip clicks from blurring the input
+  tooltip.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // Prevents input from losing focus
+    isClickingIcon = true;
+  });
+  
+  // Close button handler
+  const closeBtn = tooltip.querySelector('.close-btn');
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tooltip.remove();
+    // Keep the icon visible after closing tooltip
+    isClickingIcon = false;
+  });
+  
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    if (tooltip.parentNode) {
+      tooltip.remove();
+    }
+  }, 10000);
+}
+
+/**
+ * Show simple tooltip
+ */
+function showTooltip(shadow, message, type = 'info') {
+  const existingTooltip = shadow.querySelector('.simple-tooltip');
+  if (existingTooltip) {
+    existingTooltip.remove();
+  }
+  
+  const tooltip = document.createElement('div');
+  tooltip.className = 'simple-tooltip';
+  
+  const tooltipStyle = document.createElement('style');
+  tooltipStyle.textContent = `
+    .simple-tooltip {
+      position: absolute;
+      bottom: 35px;
+      right: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      animation: fadeIn 0.2s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  `;
+  shadow.appendChild(tooltipStyle);
+  
+  tooltip.textContent = message;
+  shadow.appendChild(tooltip);
+  
+  setTimeout(() => {
+    if (tooltip.parentNode) {
+      tooltip.remove();
+    }
+  }, 2000);
+}
+
+/**
+ * Schedule automatic score update as user types
+ */
+let scoreUpdateTimers = new Map();
+
+async function scheduleScoreUpdate(element) {
+  if (!element) {
+    console.warn('⚠️ [HATE-DETECT] scheduleScoreUpdate called with null element');
+    return;
+  }
+  
+  if (!element.__hateDetectIcon) {
+    console.warn('⚠️ [HATE-DETECT] Element has no icon yet, skipping score update');
+    return;
+  }
+  
+  console.log('⏰ [HATE-DETECT] Scheduling score update...');
+  
+  // Clear existing timer for this element
+  if (scoreUpdateTimers.has(element)) {
+    clearTimeout(scoreUpdateTimers.get(element));
+    console.log('🔄 [HATE-DETECT] Cleared previous timer');
+  }
+  
+  // Set new timer (debounce)
+  const timer = setTimeout(async () => {
+    console.log('🔍 [HATE-DETECT] Timer fired, updating score...');
+    const text = getEditableText(element);
+    console.log('📝 [HATE-DETECT] Current text:', text);
+    
+    if (!text || text.trim().length === 0) {
+      console.log('⏭️ [HATE-DETECT] No text, hiding badge');
+      // Reset badge if no text
+      const icon = element.__hateDetectIcon;
+      if (icon && icon.__hateDetectShadow) {
+        const badge = icon.__hateDetectShadow.querySelector('.score-badge');
+        if (badge) {
+          badge.classList.remove('show');
+        }
+      }
+      return;
+    }
+    
+    try {
+      console.log('📡 [HATE-DETECT] Calling API for score update...');
+      const result = await apiClient.detectHateSpeech(text);
+      console.log('✅ [HATE-DETECT] API response:', result);
+      const hateScore = Math.round((result.confidence || 0) * 100);
+      console.log('📊 [HATE-DETECT] Calculated score:', hateScore);
+      
+      // Update the badge
+      const icon = element.__hateDetectIcon;
+      if (icon && icon.__hateDetectShadow) {
+        console.log('🎨 [HATE-DETECT] Updating badge...');
+        updateScoreBadge(icon.__hateDetectShadow, hateScore, result.is_hate);
+        currentScoreData[element] = result;
+        console.log('✅ [HATE-DETECT] Badge updated successfully');
+      } else {
+        console.warn('⚠️ [HATE-DETECT] Icon or shadow not found for badge update');
+      }
+    } catch (error) {
+      console.error('❌ [HATE-DETECT] Error updating score:', error);
+      console.error('❌ [HATE-DETECT] Error stack:', error.stack);
+    }
+  }, 1000); // Wait 1 second after user stops typing
+  
+  scoreUpdateTimers.set(element, timer);
+  console.log('⏰ [HATE-DETECT] Timer set for 1 second');
 }
 
 /**
@@ -743,3 +1362,93 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     console.log('Settings updated:', settings);
   }
 });
+
+// Global debug helper for troubleshooting
+window.hateDetectDebug = function() {
+  console.log('\\n=== HATE DETECT DEBUG INFO ===');
+  console.log('Site:', window.location.hostname);
+  console.log('URL:', window.location.href);
+  
+  // Check all possible selectors
+  const selectors = [
+    'textarea',
+    'input[type="text"]',
+    '[contenteditable="true"]',
+    '[role="textbox"]',
+    'div[contenteditable]',
+    'form textarea',
+    'form [contenteditable]',
+    '[aria-label*="comment" i]',
+    '[placeholder*="comment" i]'
+  ];
+  
+  console.log('\\nElements found by selector:');
+  let totalFound = 0;
+  selectors.forEach(sel => {
+    try {
+      const elements = document.querySelectorAll(sel);
+      if (elements.length > 0) {
+        totalFound += elements.length;
+        console.log(`  ✓ ${sel}: ${elements.length} found`);
+        elements.forEach((el, i) => {
+          const isVisible = el.offsetHeight > 0 && el.offsetWidth > 0;
+          console.log(`    [${i}] ${isVisible ? '👁️' : '🚫'}:`, {
+            tag: el.tagName,
+            contenteditable: el.getAttribute('contenteditable'),
+            role: el.getAttribute('role'),
+            ariaLabel: el.getAttribute('aria-label'),
+            placeholder: el.getAttribute('placeholder'),
+            visible: isVisible,
+            hasIcon: !!el.__hateDetectIcon,
+            marked: !!el.__hateDetectMarked,
+            hasListener: !!el.__hateCheckListener
+          });
+        });
+      }
+    } catch (e) {
+      console.log(`  ✗ ${sel}: error - ${e.message}`);
+    }
+  });
+  
+  if (totalFound === 0) {
+    console.warn('⚠️ NO EDITABLE ELEMENTS FOUND! Extension cannot work.');
+    console.log('💡 This might be because:');
+    console.log('  1. Page hasn\'t loaded yet - try scrolling or clicking around');
+    console.log('  2. Site uses iframe - check inside iframes');
+    console.log('  3. Site uses Shadow DOM - elements are hidden');
+    console.log('  4. Different selectors needed - inspect the input element');
+  }
+  
+  console.log('\\nExtension state:');
+  console.log('  Extension loaded:', typeof getEditableElements === 'function');
+  console.log('  Content script loaded:', typeof attachSendListeners === 'function');
+  console.log('  API available:', typeof apiClient === 'object');
+  console.log('  Focused element:', currentFocusedElement);
+  console.log('  Icons in DOM:', document.querySelectorAll('.hate-detect-icon').length);
+  console.log('  Marked elements:', document.querySelectorAll('.hate-detect-ready').length);
+  console.log('  Active elements:', document.querySelectorAll('.hate-detect-active').length);
+  
+  console.log('\\n📋 Quick actions:');
+  console.log('  Force re-scan: hateDetectFunctions.attachSendListeners()');
+  console.log('  Get editables: getEditableElements()');
+  console.log('  Manual attach: hateDetectFunctions.markEditableForDetection(element)');
+  console.log('  Click on comment box, then run hateDetectDebug() again!');
+  console.log('\\nℹ️ If no elements are marked, the extension may have loaded before');
+  console.log('   the page content. Try running: hateDetectFunctions.attachSendListeners()\\n');
+};
+
+console.log('💡 [HATE-DETECT] Debug helper loaded! Run hateDetectDebug() in console for troubleshooting.');
+
+// Make key functions globally accessible for debugging
+window.attachSendListeners = attachSendListeners;
+window.markEditableForDetection = markEditableForDetection;
+window.injectIconIntoInput = injectIconIntoInput;
+window.currentFocusedElement = currentFocusedElement;
+
+window.hateDetectFunctions = {
+  attachSendListeners,
+  getEditableElements,
+  markEditableForDetection,
+  injectIconIntoInput
+};
+

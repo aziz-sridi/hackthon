@@ -22,13 +22,18 @@
         "https://www.facebook.com/*",
         "https://www.instagram.com/*",
         "https://www.x.com/*",
-        "https://twitter.com/*"
+        "https://twitter.com/*",
+        "http://*/*",
+        "https://*/*",
+        "file://*/*"
       ],
       "js": [
+        "utils/apiClient.js",
         "utils/domDetection.js",
         "contentScript.js"
       ],
-      "run_at": "document_start"
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "action": {

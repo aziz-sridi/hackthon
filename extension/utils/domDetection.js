@@ -11,9 +11,21 @@ const EDITABLE_SELECTORS = [
   '[data-testid="dmComposerTextInput"]',
   '.fb-comment-text',
   '.PageComposerFormDesktop textarea',
-  '[placeholder*="comment"]',
-  '[placeholder*="message"]',
-  '[placeholder*="tweet"]'
+  '[placeholder*="comment" i]',
+  '[placeholder*="message" i]',
+  '[placeholder*="tweet" i]',
+  '[placeholder*="reply" i]',
+  // Instagram-specific selectors
+  '[aria-label*="Add a comment" i]',
+  '[aria-label*="Write a comment" i]',
+  '[placeholder*="Add a comment" i]',
+  'form textarea[placeholder]',
+  'form [contenteditable="true"]',
+  'div[contenteditable="true"][role="textbox"]',
+  // More generic but specific patterns
+  'div[contenteditable="true"]',
+  'p[contenteditable="true"]',
+  'span[contenteditable="true"]'
 ];
 
 const SEND_BUTTON_SELECTORS = [
@@ -144,3 +156,10 @@ function getActiveEditableElement() {
   }
   return null;
 }
+
+// Expose functions globally for debugging and cross-script access
+window.getEditableElements = getEditableElements;
+window.findSendButton = findSendButton;
+window.getEditableText = getEditableText;
+window.setEditableText = setEditableText;
+window.getActiveEditableElement = getActiveEditableElement;
