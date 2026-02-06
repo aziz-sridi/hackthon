@@ -41,7 +41,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function detectHateSpeech(text) {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const lowerText = text.toLowerCase();
+      const normalizedText = normalizeText(text);
+      const lowerText = normalizedText.toLowerCase();
       
       const hatePatterns = {
         slur: [
@@ -49,15 +50,17 @@ async function detectHateSpeech(text) {
           /\b(should\s+all\s+(die|burn|suffer)|genocide|exterminate)\b/gi
         ],
         harassment: [
-          /you\s+are\s+(stupid|dumb|idiot|retard|moron)/gi,
-          /go\s+(kill\s+yourself|kys|die)/gi
+          /you\s*(?:are|re|'re)\s+(stupid|dumb|idiot|moron|trash|pathetic|worthless)/gi,
+          /go\s+(kill\s+yourself|kys|die)/gi,
+          /you\s+should\s+be\s+ashamed/gi
         ],
         threat: [
-          /i('ll|'m)\s+(kill|hurt|find|beat|stab|shoot)/gi,
-          /you\s+(deserve|should)\s+(die|suffer|burn)/gi
+          /i\s*(?:'ll|will|am|'m)\s+(kill|hurt|find|beat|stab|shoot)/gi,
+          /you\s+(deserve|should)\s+(die|suffer|burn)/gi,
+          /i\s+will\s+make\s+you\s+pay/gi
         ],
         insult: [
-          /\b(ugly|fat|loser|pathetic|worthless)\b/gi
+          /\b(ugly|fat|loser|pathetic|worthless|disgusting)\b/gi
         ]
       };
 
@@ -81,13 +84,29 @@ async function detectHateSpeech(text) {
       }
 
       resolve({
-        is_hate: highestConfidence > 0.5,
+        is_hate: highestConfidence > 0,
         confidence: highestConfidence,
         category: detectedCategory,
         timestamp: Date.now()
       });
     }, 100);
   });
+}
+
+function normalizeText(text) {
+  if (!text) return '';
+
+  const noDiacritics = text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const leetNormalized = noDiacritics.replace(/[013457@$]/g, (char) => {
+    const map = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's' };
+    return map[char] || char;
+  });
+
+  return leetNormalized
+    .replace(/[^\w\s']/g, ' ')
+    .replace(/(.)\1{2,}/g, '$1$1')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**

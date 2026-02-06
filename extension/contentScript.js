@@ -13,6 +13,82 @@ let settings = {
   }
 };
 
+const HATE_BADGE_TEXT = 'HS';
+const HATE_SCORE_UNAVAILABLE = 'No text to score';
+const HATE_SCORE_PENDING = 'Analyzing...';
+const HATE_SCORE_ERROR = 'Score unavailable';
+
+function injectIndicatorStyles() {
+  if (document.getElementById('hateDetectStyles')) return;
+
+  const style = document.createElement('style');
+  style.id = 'hateDetectStyles';
+  style.textContent = `
+    .hate-detect-ready {
+      outline: 1px solid rgba(231, 76, 60, 0.35);
+      outline-offset: 2px;
+    }
+
+    .hate-detect-active {
+      outline: 2px solid rgba(231, 76, 60, 0.8);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+    }
+
+    .hate-detect-badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #e74c3c;
+      color: #ffffff;
+      font-size: 10px;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      z-index: 2147483647;
+      pointer-events: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+
+    .hate-detect-badge.clickable {
+      pointer-events: auto;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .hate-detect-tooltip {
+      position: absolute;
+      top: 20px;
+      right: 0;
+      background: #ffffff;
+      color: #2c3e50;
+      border: 1px solid rgba(231, 76, 60, 0.25);
+      border-radius: 8px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+      padding: 8px 10px;
+      font-size: 11px;
+      min-width: 140px;
+      max-width: 200px;
+      z-index: 2147483647;
+    }
+
+    .hate-detect-tooltip .score-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .hate-detect-tooltip .score-title {
+      font-weight: 600;
+      color: #e74c3c;
+      margin-bottom: 4px;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 // Load settings from storage
 chrome.storage.sync.get(null, (data) => {
   if (data && Object.keys(data).length > 0) {
@@ -40,6 +116,8 @@ function initializeExtension() {
  * FEATURE 1: Pre-Send Hate Detection
  */
 function setupPreSendDetection() {
+  injectIndicatorStyles();
+
   // Monitor for editable elements
   const observer = new MutationObserver(() => {
     attachSendListeners();
@@ -67,6 +145,8 @@ function attachSendListeners() {
     element.addEventListener('keydown', handleKeyboardSend, true);
     element.__hateCheckListener = true;
 
+    markEditableForDetection(element);
+
     // Find associated send button
     const sendButton = findSendButton(element);
     if (sendButton && !sendButton.__hateCheckListener) {
@@ -74,6 +154,176 @@ function attachSendListeners() {
       sendButton.__hateCheckListener = true;
     }
   });
+}
+
+function markEditableForDetection(element) {
+  if (!element || element.__hateDetectMarked) return;
+
+  element.classList.add('hate-detect-ready');
+
+  element.addEventListener('focus', handleEditableFocus, true);
+  element.addEventListener('blur', handleEditableBlur, true);
+  element.addEventListener('input', handleEditableInput, true);
+  element.__hateDetectMarked = true;
+}
+
+function handleEditableFocus(event) {
+  const element = event.target;
+  element.classList.add('hate-detect-active');
+  showDetectionBadge(element);
+  scheduleScoreUpdate(element);
+}
+
+function handleEditableBlur(event) {
+  const element = event.target;
+  element.classList.remove('hate-detect-active');
+  removeDetectionBadge(element);
+  clearScoreTimer(element);
+}
+
+function handleEditableInput(event) {
+  scheduleScoreUpdate(event.target);
+}
+
+function showDetectionBadge(element) {
+  if (!element || element.__hateDetectBadge) return;
+
+  const parent = element.parentElement;
+  if (!parent) return;
+
+  const computed = window.getComputedStyle(parent);
+  if (computed.position === 'static') {
+    parent.__hatePrevPosition = parent.style.position || '';
+    parent.style.position = 'relative';
+  }
+
+  const badge = document.createElement('span');
+  badge.className = 'hate-detect-badge clickable';
+  badge.textContent = HATE_BADGE_TEXT;
+  badge.setAttribute('title', 'Hate Speech Score');
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleScoreTooltip(element);
+  });
+  parent.appendChild(badge);
+  element.__hateDetectBadge = badge;
+}
+
+function removeDetectionBadge(element) {
+  if (!element || !element.__hateDetectBadge) return;
+
+  const badge = element.__hateDetectBadge;
+  if (element.__hateDetectTooltip) {
+    element.__hateDetectTooltip.remove();
+    delete element.__hateDetectTooltip;
+  }
+  const parent = badge.parentElement;
+  badge.remove();
+  delete element.__hateDetectBadge;
+
+  if (parent && parent.__hatePrevPosition !== undefined) {
+    parent.style.position = parent.__hatePrevPosition;
+    delete parent.__hatePrevPosition;
+  }
+}
+
+function toggleScoreTooltip(element) {
+  if (!element.__hateDetectBadge) return;
+
+  if (element.__hateDetectTooltip) {
+    element.__hateDetectTooltip.remove();
+    delete element.__hateDetectTooltip;
+    return;
+  }
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'hate-detect-tooltip';
+  tooltip.innerHTML = renderScoreTooltip(element.__hateDetectScore);
+  element.__hateDetectBadge.appendChild(tooltip);
+  element.__hateDetectTooltip = tooltip;
+
+  if (!element.__hateDetectScore) {
+    updateScoreForElement(element);
+  }
+}
+
+function renderScoreTooltip(score) {
+  if (!score) {
+    return `
+      <div class="score-title">Detection</div>
+      <div>${HATE_SCORE_UNAVAILABLE}</div>
+    `;
+  }
+
+  if (score.status === 'pending') {
+    return `
+      <div class="score-title">Detection</div>
+      <div>${HATE_SCORE_PENDING}</div>
+    `;
+  }
+
+  if (score.status === 'error') {
+    return `
+      <div class="score-title">Detection</div>
+      <div>${HATE_SCORE_ERROR}</div>
+    `;
+  }
+
+  const percent = Math.round((score.confidence || 0) * 100);
+  const category = score.category || 'neutral';
+  return `
+    <div class="score-title">Detection</div>
+    <div class="score-line"><span>Score</span><strong>${percent}%</strong></div>
+    <div class="score-line"><span>Category</span><strong>${category}</strong></div>
+  `;
+}
+
+function scheduleScoreUpdate(element) {
+  if (!element) return;
+  clearScoreTimer(element);
+  element.__hateDetectScoreTimer = setTimeout(() => {
+    updateScoreForElement(element);
+  }, 400);
+}
+
+function clearScoreTimer(element) {
+  if (element && element.__hateDetectScoreTimer) {
+    clearTimeout(element.__hateDetectScoreTimer);
+    delete element.__hateDetectScoreTimer;
+  }
+}
+
+async function updateScoreForElement(element) {
+  if (!element) return;
+  const text = getEditableText(element);
+
+  if (!text || text.trim().length === 0) {
+    element.__hateDetectScore = null;
+    updateTooltipContent(element);
+    return;
+  }
+
+  element.__hateDetectScore = { status: 'pending' };
+  updateTooltipContent(element);
+
+  try {
+    const result = await apiClient.detectHateSpeech(text);
+    element.__hateDetectScore = {
+      status: 'ok',
+      confidence: result.confidence,
+      category: result.category,
+      isHate: result.is_hate
+    };
+  } catch (error) {
+    element.__hateDetectScore = { status: 'error' };
+  }
+
+  updateTooltipContent(element);
+}
+
+function updateTooltipContent(element) {
+  if (!element || !element.__hateDetectTooltip) return;
+  element.__hateDetectTooltip.innerHTML = renderScoreTooltip(element.__hateDetectScore);
 }
 
 /**
@@ -127,7 +377,8 @@ async function processTextForSending(text, editableElement) {
   try {
     const result = await apiClient.detectHateSpeech(text);
 
-    if (!result.is_hate || result.confidence < 0.5) {
+    const threshold = getSensitivityThreshold();
+    if (!result.is_hate || result.confidence < threshold) {
       // Safe to send
       hideLoadingIndicator(editableElement);
       actuallyAllowSend(editableElement);
