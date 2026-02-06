@@ -1,6 +1,15 @@
 // Utility functions for detecting editable elements on social media platforms
 
 const EDITABLE_SELECTORS = [
+  // Instagram-specific selectors (prioritized)
+  '[role="textbox"][contenteditable="true"]',
+  'textarea[placeholder*="message" i]',
+  '[aria-label*="Message" i][contenteditable="true"]',
+  '[aria-label*="Add a comment" i]',
+  '[aria-label*="Write a comment" i]',
+  '[placeholder*="Add a comment" i]',
+  'p[contenteditable="true"]',
+  // General selectors
   'textarea',
   'input[type="text"]',
   '[contenteditable="true"]',
@@ -12,19 +21,13 @@ const EDITABLE_SELECTORS = [
   '.fb-comment-text',
   '.PageComposerFormDesktop textarea',
   '[placeholder*="comment" i]',
-  '[placeholder*="message" i]',
   '[placeholder*="tweet" i]',
   '[placeholder*="reply" i]',
-  // Instagram-specific selectors
-  '[aria-label*="Add a comment" i]',
-  '[aria-label*="Write a comment" i]',
-  '[placeholder*="Add a comment" i]',
   'form textarea[placeholder]',
   'form [contenteditable="true"]',
   'div[contenteditable="true"][role="textbox"]',
   // More generic but specific patterns
   'div[contenteditable="true"]',
-  'p[contenteditable="true"]',
   'span[contenteditable="true"]'
 ];
 

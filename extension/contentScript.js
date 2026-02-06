@@ -37,6 +37,248 @@ function injectIndicatorStyles() {
       outline: 2px solid rgba(231, 76, 60, 0.3);
       outline-offset: 2px;
     }
+
+    /* Blur and warning styles for incoming content */
+    .hate-content-blurred {
+      position: relative !important;
+      filter: blur(10px) !important;
+      user-select: none !important;
+      pointer-events: none !important;
+      transition: filter 0.3s ease !important;
+      background: none !important;
+      opacity: 0.6 !important;
+    }
+
+    .hate-content-blurred.revealed {
+      filter: none !important;
+      pointer-events: auto !important;
+      user-select: auto !important;
+    }
+
+    /* Floating FAB for unblurring */
+    .hate-blur-fab {
+      position: absolute !important;
+      bottom: 8px !important;
+      right: 8px !important;
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      background: #e74c3c !important;
+      color: white !important;
+      border: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 18px !important;
+      z-index: 1001 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .hate-blur-fab:hover {
+      background: #c0392b !important;
+      transform: scale(1.1) !important;
+      box-shadow: 0 6px 16px rgba(231, 76, 60, 0.5) !important;
+    }
+
+    .hate-blur-fab:active {
+      transform: scale(0.95) !important;
+    }
+
+    /* Unblur menu that appears when FAB is clicked */
+    .hate-unblur-menu {
+      position: absolute !important;
+      bottom: 55px !important;
+      right: 8px !important;
+      background: white !important;
+      border: 1px solid #ddd !important;
+      border-radius: 8px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+      padding: 12px !important;
+      min-width: 220px !important;
+      z-index: 1002 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+      animation: slideInUp 0.2s ease !important;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hate-unblur-menu-title {
+      font-size: 11px !important;
+      color: #666 !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      margin-bottom: 8px !important;
+    }
+
+    .hate-unblur-reason {
+      font-size: 13px !important;
+      color: #333 !important;
+      padding: 8px 12px !important;
+      background: #fff3cd !important;
+      border-left: 3px solid #e74c3c !important;
+      border-radius: 4px !important;
+      margin-bottom: 12px !important;
+      font-weight: 500 !important;
+    }
+
+    .hate-unblur-actions {
+      display: flex !important;
+      gap: 8px !important;
+    }
+
+    .hate-unblur-btn {
+      flex: 1 !important;
+      padding: 8px 12px !important;
+      border: none !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      font-family: inherit !important;
+    }
+
+    .hate-unblur-btn-primary {
+      background: #3498db !important;
+      color: white !important;
+    }
+
+    .hate-unblur-btn-primary:hover {
+      background: #2980b9 !important;
+    }
+
+    .hate-unblur-btn-secondary {
+      background: #ecf0f1 !important;
+      color: #333 !important;
+    }
+
+    .hate-unblur-btn-secondary:hover {
+      background: #d5dbdb !important;
+    }
+
+    /* Flagging styles - removed colored backgrounds */
+    .hate-flag-mode {
+      outline: 2px dashed #999 !important;
+      outline-offset: 2px !important;
+      cursor: pointer !important;
+    }
+
+    /* Inspect-style hover highlight - clean blue outline only */
+    .hate-inspect-highlight {
+      outline: 2px solid #1e90ff !important;
+      outline-offset: 0px !important;
+      cursor: crosshair !important;
+      position: relative !important;
+      background: rgba(30, 144, 255, 0.1) !important;
+      box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.3) !important;
+    }
+
+    .hate-inspect-tooltip {
+      position: absolute !important;
+      top: -30px !important;
+      left: 0 !important;
+      background: #1e90ff !important;
+      color: white !important;
+      padding: 5px 10px !important;
+      border-radius: 3px !important;
+      font-size: 12px !important;
+      font-family: Consolas, monospace !important;
+      z-index: 999999 !important;
+      white-space: nowrap !important;
+      pointer-events: none !important;
+      font-weight: 600 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .hate-flag-menu {
+      position: absolute !important;
+      top: 100% !important;
+      right: 0 !important;
+      background: white !important;
+      border: 1px solid #ccc !important;
+      border-radius: 6px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+      padding: 4px 0 !important;
+      min-width: 240px !important;
+      z-index: 10000 !important;
+      margin-top: 5px !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+    }
+
+    .hate-flag-option {
+      padding: 12px 16px !important;
+      cursor: pointer !important;
+      font-size: 14px !important;
+      color: #333 !important;
+      transition: all 0.15s ease !important;
+      background: white !important;
+      border: none !important;
+      display: block !important;
+      width: 100% !important;
+      text-align: left !important;
+    }
+
+    .hate-flag-option:hover {
+      background: #f0f0f0 !important;
+    }
+
+    .hate-flag-option:active {
+      background: #e0e0e0 !important;
+    }
+
+    /* Detection visual indicators - different colors for different types */
+    .hate-detect-dm {
+      border: 3px solid #ff00ff !important;
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.5) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .hate-detect-post-message {
+      border: 3px solid #00ffff !important;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .hate-detect-comment {
+      border: 3px solid #ffff00 !important;
+      box-shadow: 0 0 10px rgba(255, 255, 0, 0.5) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    /* Animations */
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
   `;
 
   document.head.appendChild(style);
@@ -129,6 +371,10 @@ function setupPreSendDetection() {
       console.log('🔍 [HATE-DETECT] Instagram: Re-scanning after 5s...');
       attachSendListeners();
     }, 5000);
+    setTimeout(() => {
+      console.log('🔍 [HATE-DETECT] Instagram: Final re-scan after 8s...');
+      attachSendListeners();
+    }, 8000);
   }
 }
 
@@ -213,7 +459,7 @@ function markEditableForDetection(element) {
     return;
   }
 
-  console.log('🎯 [HATE-DETECT] Marking element for detection (listeners only, no icon yet):', element);
+  console.log('🎯 [HATE-DETECT] Marking element for detection (listeners only, no  icon yet):', element);
   element.classList.add('hate-detect-ready');
 
   // Don't inject icon yet - only on focus
@@ -319,8 +565,12 @@ function handleEditableBlur(event) {
 function getEditableFromEventTarget(target) {
   if (!target) return null;
   if (target.closest) {
-    const editable = target.closest('[contenteditable="true"], [contenteditable="plaintext-only"], textarea, input[type="text"], [role="textbox"]');
-    if (editable) return editable;
+    try {
+      const editable = target.closest('[contenteditable="true"], [contenteditable="plaintext-only"], textarea, input[type="text"], [role="textbox"]');
+      if (editable) return editable;
+    } catch (e) {
+      console.log('⚠️ [HATE-DETECT] Error in getEditableFromEventTarget:', e.message);
+    }
   }
   return null;
 }
@@ -1190,6 +1440,8 @@ function actuallyAllowSend(editableElement) {
  * FEATURE 2: Incoming Hate Filtering
  */
 function setupIncomingFiltering() {
+  console.log('🔍 [HATE-DETECT] Setting up incoming content filtering...');
+  
   const observer = new MutationObserver(() => {
     filterHateContent();
   });
@@ -1202,108 +1454,873 @@ function setupIncomingFiltering() {
 
   // Initial scan
   filterHateContent();
+  
+  // Re-scan periodically for dynamic content
+  setInterval(() => {
+    filterHateContent();
+  }, 3000);
+  
+  console.log('✅ [HATE-DETECT] Incoming filtering active');
 }
 
 /**
  * Find and filter hateful messages in the DOM
  */
 async function filterHateContent() {
-  // Get all text nodes and elements that might contain messages
   const messageElements = getMessageElements();
+  console.log(`📨 [HATE-DETECT] Scanning ${messageElements.length} potential content items...`);
 
-  for (const element of messageElements) {
+  for (const item of messageElements) {
+    const element = item.element;
+    const type = item.type;
+    
     if (element.__hateFiltered) continue; // Already filtered
 
-    const text = element.textContent;
+    // Find the deepest text-containing div
+    const textElement = findDeepestTextDiv(element);
+    if (!textElement) {
+      console.log('⚠️ [HATE-DETECT] No text div found, skipping...');
+      continue;
+    }
+
+    const text = textElement.textContent;
     if (!text || text.trim().length === 0) continue;
 
     // Skip very long texts to avoid performance issues
     if (text.length > 10000) continue;
 
-    try {
-      const result = await apiClient.detectHateSpeech(text);
+    // Apply border color based on type
+    const colorClass = {
+      'dm': 'hate-detect-dm',
+      'post-message': 'hate-detect-post-message',
+      'comment': 'hate-detect-comment'
+    }[type] || 'hate-detect-dm';
+    
+    textElement.classList.add(colorClass);
+    element.__hateFiltered = true;
+    console.log(`✅ [HATE-DETECT] ${type} detected and marked with ${colorClass}`);
 
-      if (result.is_hate && result.confidence > getSensitivityThreshold()) {
-        applyFilterAction(element, result);
-        element.__hateFiltered = true;
-      }
-    } catch (error) {
-      console.error('Filter error:', error);
+    // TODO: Call API here when ready
+    // For now, we'll just mark elements as detected and ready for blur
+    // Simulate detection (will be replaced with actual API call)
+    const shouldBlur = simulateHateDetection(text);
+    
+    if (shouldBlur) {
+      console.log('⚠️ [HATE-DETECT] Potentially harmful content detected, applying blur...');
+      applyBlurOverlay(textElement, {
+        category: 'potentially harmful',
+        confidence: 0.85
+      });
     }
   }
 }
 
 /**
- * Get all potential message elements
+ * Simulate hate detection (temporary - will be replaced with API call)
+ * This is a placeholder for the actual API integration
+ */
+function simulateHateDetection(text) {
+  // TODO: Replace this with actual API call
+  // return false for now to not blur everything
+  // You can test by uncommenting the line below
+  // return text.length > 50; // Just for testing
+  return false;
+}
+
+/**
+ * Get all potential message elements from Facebook and Instagram with type classification
  */
 function getMessageElements() {
   const elements = [];
-  const selectors = [
-    '[data-testid="tweet"]',
-    '[data-testid="primaryColumn"] [role="article"]',
-    '.fb-comment-text',
-    '.commentText',
-    '[role="article"]',
-    '.x1hx0egp', // Twitter-specific
-    '.comment-block', // Instagram-specific
-    '[data-pagelet="FeedUnit"]' // Facebook-specific
-  ];
-
-  selectors.forEach(selector => {
-    try {
-      const found = document.querySelectorAll(selector);
-      elements.push(...Array.from(found));
-    } catch (e) {
-      // Invalid selector
-    }
+  const hostname = window.location.hostname;
+  
+  console.log(`🔍 [HATE-DETECT] Scanning for content on ${hostname}...`);
+  
+  // Facebook DM detection
+  if (hostname.includes('facebook.com') || hostname.includes('messenger.com')) {
+    console.log('📘 [HATE-DETECT] Facebook detected - scanning DMs and comments...');
+    
+    // Facebook Messenger DMs - limit to conversation containers
+    const conversationContainers = document.querySelectorAll('[aria-label*="Messages in conversation with"]');
+    console.log(`  - Found ${conversationContainers.length} Facebook conversation containers`);
+    conversationContainers.forEach(container => {
+      const messages = container.querySelectorAll('[class*="chat-outgoing-message-bubble"], [class*="chat-incoming-message-bubble"], [role="row"] [dir="auto"]');
+      messages.forEach(msg => {
+        if (hasTextContent(msg)) {
+          elements.push({ element: msg, type: 'dm' });
+        }
+      });
+    });
+    
+    // Facebook posts with messages (look for posts with specific message content)
+    const fbPosts = document.querySelectorAll('[data-pagelet="FeedUnit"], [role="article"]');
+    console.log(`  - Found ${fbPosts.length} Facebook posts`);
+    fbPosts.forEach(post => {
+      // Look for message divs within posts
+      const messageDivs = post.querySelectorAll('[class*="message"], [data-ad-rendering-role="message"]');
+      if (messageDivs.length > 0) {
+        messageDivs.forEach(msg => {
+          if (hasTextContent(msg)) {
+            elements.push({ element: msg, type: 'post-message' });
+          }
+        });
+      }
+    });
+    
+    // Facebook comments - aria-label="Comment by"
+    const fbComments = document.querySelectorAll('[aria-label*="Comment by"]');
+    console.log(`  - Found ${fbComments.length} Facebook comments`);
+    fbComments.forEach(comment => {
+      if (hasTextContent(comment)) {
+        elements.push({ element: comment, type: 'comment' });
+      }
+    });
+  }
+  
+  // Instagram DM detection
+  if (hostname.includes('instagram.com')) {
+    console.log('📸 [HATE-DETECT] Instagram detected - scanning DMs and comments...');
+    
+    // Instagram DMs - limit to conversation containers
+    const igConversations = document.querySelectorAll('[aria-label*="Messages in conversation with"]');
+    console.log(`  - Found ${igConversations.length} Instagram conversation containers`);
+    igConversations.forEach(container => {
+      const messages = container.querySelectorAll('[role="row"] [dir="auto"], [class*="message"]');
+      messages.forEach(msg => {
+        if (hasTextContent(msg)) {
+          elements.push({ element: msg, type: 'dm' });
+        }
+      });
+    });
+    
+    // Instagram comments
+    const igComments = document.querySelectorAll('[role="button"][tabindex="0"] > span, article span[dir="auto"]');
+    console.log(`  - Found ${igComments.length} Instagram comments`);
+    igComments.forEach(comment => {
+      if (hasTextContent(comment) && !isInsideConversation(comment)) {
+        elements.push({ element: comment, type: 'comment' });
+      }
+    });
+  }
+  
+  // Twitter/X detection (keep existing)
+  if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+    console.log('🐦 [HATE-DETECT] Twitter/X detected - scanning tweets...');
+    const tweets = document.querySelectorAll('[data-testid="tweet"], [data-testid="tweetText"]');
+    console.log(`  - Found ${tweets.length} tweets`);
+    tweets.forEach(tweet => {
+      if (hasTextContent(tweet)) {
+        elements.push({ element: tweet, type: 'post-message' });
+      }
+    });
+  }
+  
+  // Remove duplicates based on element reference
+  const uniqueElements = Array.from(
+    new Map(elements.map(item => [item.element, item])).values()
+  ).filter(item => {
+    const rect = item.element.getBoundingClientRect();
+    return rect.width > 10 && rect.height > 10;
   });
-
-  return Array.from(new Set(elements));
+  
+  console.log(`✅ [HATE-DETECT] Total unique content elements found: ${uniqueElements.length}`);
+  return uniqueElements;
 }
 
 /**
- * Apply filter action to hateful content
+ * Check if element has meaningful text content
+ */
+function hasTextContent(element) {
+  if (!element) return false;
+  const text = element.textContent ? element.textContent.trim() : '';
+  return text.length > 5;
+}
+
+/**
+ * Check if element is inside a conversation container
+ */
+function isInsideConversation(element) {
+  return !!element.closest('[aria-label*="Messages in conversation with"]') ||
+         !!element.closest('[aria-label*="Conversation with"]');
+}
+
+/**
+ * Find the deepest div that contains text (last child with text)
+ */
+function findDeepestTextDiv(element) {
+  if (!element) return null;
+  
+  let deepestDiv = null;
+  let maxDepth = 0;
+  
+  function traverse(el, depth) {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
+    
+    const tagName = el.tagName.toLowerCase();
+    
+    // Check if this is a div with text content
+    if (tagName === 'div' && hasTextContent(el)) {
+      if (depth > maxDepth) {
+        maxDepth = depth;
+        deepestDiv = el;
+      }
+    }
+    
+    // Traverse children
+    for (let child of el.children) {
+      traverse(child, depth + 1);
+    }
+  }
+  
+  // Start traversal
+  traverse(element, 0);
+  
+  // If no div found, return the element itself if it has text
+  return deepestDiv || (hasTextContent(element) ? element : null);
+}
+
+/**
+ * Find the best element to blur - the last/deepest div containing text
+ */
+function findSmallestTextElement(element) {
+  if (!element) return null;
+  
+  // Function to check if element is primarily text (not buttons/links)
+  function isPrimaryTextElement(el) {
+    const tag = el.tagName.toLowerCase();
+    // Skip non-text elements
+    if (['button', 'a', 'input', 'select', 'textarea', 'svg', 'img', 'video', 'audio'].includes(tag)) {
+      return false;
+    }
+    
+    // Check if has text content
+    const text = el.textContent ? el.textContent.trim() : '';
+    return text.length > 5;
+  }
+  
+  // Start with the parent element
+  let bestElement = element;
+  
+  // Look for the deepest div or text container
+  const walker = document.createTreeWalker(
+    element,
+    NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode: function(node) {
+        if (isPrimaryTextElement(node)) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+        return NodeFilter.FILTER_SKIP;
+      }
+    }
+  );
+  
+  let deepestTextContainer = null;
+  let maxDepth = 0;
+  let currentDepth = 0;
+  
+  // Find the deepest element with text
+  let node = walker.nextNode();
+  while (node) {
+    currentDepth++;
+    if (currentDepth > maxDepth) {
+      maxDepth = currentDepth;
+      deepestTextContainer = node;
+    }
+    node = walker.nextNode();
+  }
+  
+  // Return the deepest text container, or the whole element if none found
+  return deepestTextContainer || element;
+}
+
+/**
+ * Apply blur to potentially harmful content
+ */
+function applyBlurOverlay(element, detectionResult) {
+  // Don't apply if already has overlay
+  if (element.__hateOverlay) {
+    console.log('⏭️ [HATE-DETECT] Element already has overlay, skipping');
+    return;
+  }
+  
+  // Only blur if element has text content
+  const textContent = element.textContent ? element.textContent.trim() : '';
+  if (!textContent || textContent.length < 5) {
+    console.log('⏭️ [HATE-DETECT] Skipping element with no text content');
+    return;
+  }
+  
+  const isUserFlagged = detectionResult.userFlagged || false;
+  console.log(`🚨 [HATE-DETECT] Applying blur to ${isUserFlagged ? 'user-flagged' : 'detected'} content`);
+  console.log('🔍 [HATE-DETECT] Original element:', element);
+  
+  // Find the best text element to blur
+  const targetBlurElement = findSmallestTextElement(element);
+  console.log('🎯 [HATE-DETECT] Target blur element:', targetBlurElement);
+  console.log('📏 [HATE-DETECT] Target dimensions:', {
+    width: targetBlurElement.offsetWidth,
+    height: targetBlurElement.offsetHeight,
+    visible: targetBlurElement.offsetParent !== null
+  });
+  
+  // Make parent element relative for positioning
+  const originalPosition = window.getComputedStyle(element).position;
+  if (originalPosition === 'static') {
+    element.style.position = 'relative';
+  }
+  
+  // Apply blur to the target element
+  targetBlurElement.classList.add('hate-content-blurred');
+  console.log('✅ [HATE-DETECT] Blur class added to:', targetBlurElement.tagName, targetBlurElement.className);
+  
+  // Also add inline styles to ensure blur is applied
+  targetBlurElement.style.filter = 'blur(10px)';
+  targetBlurElement.style.opacity = '0.6';
+  targetBlurElement.style.userSelect = 'none';
+  targetBlurElement.style.pointerEvents = 'none';
+  
+  const reason = isUserFlagged 
+    ? detectionResult.category
+    : (detectionResult.category || 'potentially harmful content');
+  
+  let isBlurred = true; // Track blur state
+  
+  // Create floating FAB button
+  const fab = document.createElement('button');
+  fab.className = 'hate-blur-fab';
+  fab.innerHTML = '🚨';
+  fab.title = 'View reason and unblur';
+  
+  // Function to toggle blur state
+  const toggleBlur = (shouldBlur) => {
+    isBlurred = shouldBlur;
+    if (shouldBlur) {
+      targetBlurElement.classList.add('hate-content-blurred');
+      targetBlurElement.classList.remove('revealed');
+      targetBlurElement.style.filter = 'blur(10px)';
+      targetBlurElement.style.opacity = '0.6';
+      targetBlurElement.style.userSelect = 'none';
+      targetBlurElement.style.pointerEvents = 'none';
+      fab.innerHTML = '🚨';
+      fab.style.background = '#e74c3c';
+      fab.title = 'View reason and unblur';
+    } else {
+      targetBlurElement.classList.remove('hate-content-blurred');
+      targetBlurElement.classList.add('revealed');
+      targetBlurElement.style.filter = 'none';
+      targetBlurElement.style.opacity = '1';
+      targetBlurElement.style.userSelect = 'auto';
+      targetBlurElement.style.pointerEvents = 'auto';
+      fab.innerHTML = '👁️';
+      fab.style.background = '#3498db';
+      fab.title = 'Blur again';
+    }
+  };
+  
+  // Click FAB to show unblur menu
+  fab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    console.log('💬 [HATE-DETECT] FAB clicked, showing menu');
+    
+    // Remove existing menu if any
+    const existingMenu = element.querySelector('.hate-unblur-menu');
+    if (existingMenu) {
+      existingMenu.remove();
+      return;
+    }
+    
+    // Create menu based on current blur state
+    const menu = document.createElement('div');
+    menu.className = 'hate-unblur-menu';
+    
+    if (isBlurred) {
+      menu.innerHTML = `
+        <div class="hate-unblur-menu-title">Content Filtered</div>
+        <div class="hate-unblur-reason">${reason}</div>
+        <div class="hate-unblur-actions">
+          <button class="hate-unblur-btn hate-unblur-btn-primary" data-action="unblur">👁️ Unblur</button>
+          <button class="hate-unblur-btn hate-unblur-btn-secondary" data-action="keep">Keep Blurred</button>
+        </div>
+      `;
+      
+      // Handle unblur action
+      menu.querySelector('[data-action="unblur"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('👁️ [HATE-DETECT] User chose to unblur content');
+        toggleBlur(false);
+        menu.remove();
+      });
+      
+      menu.querySelector('[data-action="keep"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('🚫 [HATE-DETECT] User chose to keep content blurred');
+        menu.remove();
+      });
+    } else {
+      // Content is unblurred, show option to blur again
+      menu.innerHTML = `
+        <div class="hate-unblur-menu-title">Content Visible</div>
+        <div class="hate-unblur-reason">Originally flagged: ${reason}</div>
+        <div class="hate-unblur-actions">
+          <button class="hate-unblur-btn hate-unblur-btn-primary" data-action="blur">🚨 Blur Again</button>
+          <button class="hate-unblur-btn hate-unblur-btn-secondary" data-action="close">Close</button>
+        </div>
+      `;
+      
+      // Handle blur again action
+      menu.querySelector('[data-action="blur"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('🚨 [HATE-DETECT] User chose to blur content again');
+        toggleBlur(true);
+        menu.remove();
+      });
+      
+      menu.querySelector('[data-action="close"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.remove();
+      });
+    }
+    
+    element.appendChild(menu);
+    
+    // Close menu when clicking outside
+    setTimeout(() => {
+      const closeHandler = (e) => {
+        if (!menu.contains(e.target) && e.target !== fab) {
+          menu.remove();
+          document.removeEventListener('click', closeHandler, true);
+        }
+      };
+      document.addEventListener('click', closeHandler, true);
+    }, 100);
+  });
+  
+  // Append FAB to parent element
+  element.appendChild(fab);
+  element.__hateOverlay = fab;
+  element.__blurredChild = targetBlurElement;
+  
+  console.log('✅ [HATE-DETECT] Blur applied successfully to:', targetBlurElement);
+  console.log('🔴 [HATE-DETECT] Red flag button added to:', element);
+}
+
+/**
+ * Apply filter action to hateful content (legacy function, keeping for compatibility)
  */
 function applyFilterAction(element, detectionResult) {
-  const action = settings.filterAction;
+  // Use the new blur overlay method
+  applyBlurOverlay(element, detectionResult);
+}
 
-  if (action === 'blur') {
-    element.classList.add('hate-blurred');
-    element.setAttribute('data-hate-category', detectionResult.category || 'hateful');
-    
-    // Add click to reveal
-    if (!element.__blurClickListener) {
-      element.addEventListener('click', (e) => {
-        e.stopPropagation();
-        element.classList.toggle('hate-blurred-revealed');
-      });
-      element.__blurClickListener = true;
+/**
+ * FEATURE 3: Click-to-Flag Functionality (Inspect-Style)
+ * Allows users to flag content that bothers them with element inspection
+ */
+let flagModeActive = false;
+let flaggedElements = new Set();
+let currentHighlightedElement = null;
+let highlightTooltip = null;
+let hoverEventsDisabled = false;
+
+// Initialize flag mode listener
+function initializeFlagMode() {
+  console.log('🚩 [HATE-DETECT] Initializing flag mode...');
+  
+  // Listen for keyboard shortcut (Ctrl+Shift+F to toggle flag mode)
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+      e.preventDefault();
+      toggleFlagMode();
     }
-  } else if (action === 'hide') {
-    element.style.display = 'none';
+  });
+  
+  // Listen for clicks when flag mode is active
+  document.addEventListener('click', handleFlagClick, true);
+  
+  // Listen for mouse movement to highlight elements (inspect-style)
+  document.addEventListener('mouseover', handleFlagHover, true);
+  document.addEventListener('mouseout', handleFlagHoverOut, true);
+  
+  console.log('✅ [HATE-DETECT] Flag mode initialized (Ctrl+Shift+F to toggle)');
+}
+
+function toggleFlagMode() {
+  flagModeActive = !flagModeActive;
+  console.log(`🚩 [HATE-DETECT] Flag mode ${flagModeActive ? 'ACTIVATED' : 'DEACTIVATED'}`);
+  
+  // Visual feedback
+  if (flagModeActive) {
+    showFlagModeNotification('🔍 Inspect Mode Active - Hover over content to inspect, click to flag');
+    document.body.style.cursor = 'crosshair';
+    hoverEventsDisabled = false; // Ensure hover is enabled when activating
+  } else {
+    showFlagModeNotification('Inspect Mode Deactivated');
+    document.body.style.cursor = '';
+    hoverEventsDisabled = false; // Reset hover events flag
     
-    // Replace with warning
-    const warning = document.createElement('div');
-    warning.className = 'hate-content-warning';
-    warning.innerHTML = `
-      <p>⚠️ This content was hidden due to harmful language</p>
-      <button class="hate-reveal-btn">Show anyway</button>
-    `;
+    // Clean up any highlights
+    if (currentHighlightedElement) {
+      currentHighlightedElement.classList.remove('hate-inspect-highlight', 'locked');
+      currentHighlightedElement = null;
+    }
+    if (highlightTooltip) {
+      highlightTooltip.remove();
+      highlightTooltip = null;
+    }
+  }
+}
+
+function handleFlagHover(e) {
+  if (!flagModeActive || hoverEventsDisabled || !e.target) return;
+  
+  const targetElement = findFlaggableElement(e.target);
+  if (!targetElement || targetElement === currentHighlightedElement) return;
+  
+  // Remove previous highlight
+  if (currentHighlightedElement) {
+    currentHighlightedElement.classList.remove('hate-inspect-highlight');
+  }
+  if (highlightTooltip) {
+    highlightTooltip.remove();
+  }
+  
+  // Add new highlight
+  currentHighlightedElement = targetElement;
+  targetElement.classList.add('hate-inspect-highlight');
+  
+  // Create tooltip with element info
+  highlightTooltip = document.createElement('div');
+  highlightTooltip.className = 'hate-inspect-tooltip';
+  
+  const tagName = targetElement.tagName.toLowerCase();
+  const className = targetElement.className ? `.${targetElement.className.split(' ')[0]}` : '';
+  const id = targetElement.id ? `#${targetElement.id}` : '';
+  const textContent = targetElement.textContent ? targetElement.textContent.trim() : '';
+  const textPreview = textContent.substring(0, 30) + (textContent.length > 30 ? '...' : '');
+  
+  highlightTooltip.textContent = `${tagName}${id}${className} | "${textPreview}"`;
+  
+  // Position tooltip
+  const rect = targetElement.getBoundingClientRect();
+  highlightTooltip.style.position = 'fixed';
+  highlightTooltip.style.top = `${rect.top - 30}px`;
+  highlightTooltip.style.left = `${rect.left}px`;
+  
+  document.body.appendChild(highlightTooltip);
+}
+
+function handleFlagHoverOut(e) {
+  if (!flagModeActive || hoverEventsDisabled || !e.target) return;
+  
+  const targetElement = findFlaggableElement(e.target);
+  
+  // Only process if we have valid elements and are truly leaving
+  if (!currentHighlightedElement || !targetElement) return;
+  if (targetElement !== currentHighlightedElement) return;
+  if (!e.relatedTarget) return;
+  
+  // Check if we're still inside the element
+  if (targetElement.contains(e.relatedTarget)) return;
+  
+  // Only remove if we're truly leaving the element
+  setTimeout(() => {
+    if (currentHighlightedElement && currentHighlightedElement.matches && !currentHighlightedElement.matches(':hover')) {
+      currentHighlightedElement.classList.remove('hate-inspect-highlight');
+      currentHighlightedElement = null;
+      if (highlightTooltip) {
+        highlightTooltip.remove();
+        highlightTooltip = null;
+      }
+    }
+  }, 100);
+}
+
+function showFlagModeNotification(message) {
+  // Create notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    animation: slideInRight 0.3s ease;
+  `;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+function handleFlagClick(e) {
+  if (!flagModeActive) return;
+  
+  // Prevent default action
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // Find the closest message/comment element
+  const targetElement = findFlaggableElement(e.target);
+  
+  if (!targetElement) {
+    console.log('⚠️ [HATE-DETECT] No flaggable element found');
+    return;
+  }
+  
+  console.log('🚩 [HATE-DETECT] Element clicked for flagging:', targetElement);
+  console.log('🔒 [HATE-DETECT] Locking element and disabling hover');
+  
+  // Lock the element (keep it highlighted and stop hover events)
+  targetElement.classList.add('hate-inspect-highlight', 'locked');
+  if (currentHighlightedElement && currentHighlightedElement !== targetElement) {
+    currentHighlightedElement.classList.remove('hate-inspect-highlight', 'locked');
+  }
+  currentHighlightedElement = targetElement;
+  
+  // Completely disable hover events
+  document.removeEventListener('mouseover', handleFlagHover, true);
+  document.removeEventListener('mouseout', handleFlagHoverOut, true);
+  hoverEventsDisabled = true;
+  console.log('✅ [HATE-DETECT] Hover events disabled');
+  
+  // Show flag menu immediately
+  showFlagMenu(targetElement, e.clientX, e.clientY);
+}
+
+function findFlaggableElement(target) {
+  // Skip if clicking on blur flag or button
+  if (!target || !target.closest) {
+    return null;
+  }
+  
+  try {
+    if (target.closest('.hate-blur-fab, .hate-unblur-menu, .hate-unblur-btn, .hate-flag-menu')) {
+      return null;
+    }
+  } catch (e) {
+    console.log('⚠️ [HATE-DETECT] Error checking closest:', e.message);
+    return null;
+  }
+  
+  // Try to find a message, comment, or post element
+  const selectors = [
+    '[aria-label*="Comment by"]',
+    '[aria-label*="Conversation with"]',
+    '[class*="message"]',
+    '[class*="chat-"]',
+    '[role="article"]',
+    '[role="row"]',
+    '.comment',
+    '[data-testid="tweet"]',
+    '[data-testid="tweetText"]',
+    '[data-pagelet*="FeedUnit"]'
+  ];
+  
+  // Check if target or any parent matches known selectors
+  if (target && target.closest) {
+    for (const selector of selectors) {
+      try {
+        const element = target.closest(selector);
+        if (element && element.textContent && element.textContent.trim().length > 5) {
+          return element;
+        }
+      } catch (e) {
+        // Invalid selector, skip
+      }
+    }
+  }
+  
+  // If nothing specific found, intelligently traverse up to find content container
+  let current = target;
+  let bestCandidate = null;
+  let bestScore = 0;
+  
+  if (!current) return null;
+  
+  for (let i = 0; i < 8; i++) {
+    if (!current || !current.parentElement) break;
+    current = current.parentElement;
     
-    warning.querySelector('.hate-reveal-btn').addEventListener('click', () => {
-      element.style.display = '';
-      warning.remove();
+    // Skip if already filtered or has no text
+    if (current.__hateFiltered || current.__hateOverlay) continue;
+    
+    // Get element dimensions and text content
+    const rect = current.getBoundingClientRect();
+    const textContent = current.textContent ? current.textContent.trim() : '';
+    const textLength = textContent.length;
+    
+    // Skip elements with no meaningful text
+    if (textLength < 5) continue;
+    const hasChildren = current.children.length > 0 && current.children.length < 20;
+    
+    // Calculate a score for this element
+    let score = 0;
+    
+    // Prefer elements with text (5-1000 chars)
+    if (textLength > 5 && textLength < 1000) score += 10;
+    if (textLength > 20) score += 5;
+    
+    // Prefer reasonable dimensions
+    if (rect.width > 100 && rect.width < 800) score += 5;
+    if (rect.height > 30 && rect.height < 600) score += 5;
+    
+    // Prefer elements with some structure
+    if (hasChildren) score += 3;
+    
+    // Bonus for semantic tags
+    const tag = current.tagName.toLowerCase();
+    if (['article', 'section', 'div', 'li'].includes(tag)) score += 2;
+    
+    // Update best candidate
+    if (score > bestScore) {
+      bestScore = score;
+      bestCandidate = current;
+    }
+  }
+  
+  // Return best candidate if score is good enough
+  if (bestScore > 10) {
+    return bestCandidate;
+  }
+  
+  return null;
+}
+
+function showFlagMenu(element, x, y) {
+  // Remove any existing menu
+  const existingMenu = document.querySelector('.hate-flag-menu');
+  if (existingMenu) existingMenu.remove();
+  
+  // Create flag menu
+  const menu = document.createElement('div');
+  menu.className = 'hate-flag-menu';
+  menu.style.cssText = `
+    position: fixed !important;
+    left: ${x}px !important;
+    top: ${y}px !important;
+  `;
+  
+  const options = [
+    { label: '😡 Hate Speech', value: 'hate' },
+    { label: '🤬 Offensive Language', value: 'offensive' },
+    { label: '👿 Harassment', value: 'harassment' },
+    { label: '😰 Makes Me Uncomfortable', value: 'uncomfortable' },
+    { label: '❌ Cancel', value: 'cancel' }
+  ];
+  
+  options.forEach(option => {
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'hate-flag-option';
+    optionDiv.textContent = option.label;
+    
+    optionDiv.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      menu.remove();
+      
+      if (option.value !== 'cancel') {
+        flagElement(element, option.value, option.label);
+        // Re-enable hover events after selection
+        hoverEventsDisabled = false;
+        document.addEventListener('mouseover', handleFlagHover, true);
+        document.addEventListener('mouseout', handleFlagHoverOut, true);
+        console.log('✅ [HATE-DETECT] Hover events re-enabled after flagging');
+        // Exit flag mode after successful flagging
+        toggleFlagMode();
+      } else {
+        // Just unlock and re-enable hover
+        if (currentHighlightedElement) {
+          currentHighlightedElement.classList.remove('hate-inspect-highlight', 'locked');
+          currentHighlightedElement = null;
+        }
+        hoverEventsDisabled = false;
+        document.addEventListener('mouseover', handleFlagHover, true);
+        document.addEventListener('mouseout', handleFlagHoverOut, true);
+        console.log('✅ [HATE-DETECT] Hover events re-enabled after cancel');
+      }
     });
     
-    element.parentNode.insertBefore(warning, element);
-  } else if (action === 'warn') {
-    const warning = document.createElement('div');
-    warning.className = 'hate-content-alert';
-    warning.innerHTML = `
-      ⚠️ This message contains ${detectionResult.category || 'potentially harmful'} language
-    `;
-    element.parentNode.insertBefore(warning, element);
+    menu.appendChild(optionDiv);
+  });
+  
+  document.body.appendChild(menu);
+  
+  // Remove menu if clicking outside
+  setTimeout(() => {
+    const removeMenu = (e) => {
+      if (!menu || !e.target) return;
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        if (currentHighlightedElement) {
+          currentHighlightedElement.classList.remove('hate-inspect-highlight', 'locked');
+          currentHighlightedElement = null;
+        }
+        // Re-enable hover events
+        hoverEventsDisabled = false;
+        document.addEventListener('mouseover', handleFlagHover, true);
+        document.addEventListener('mouseout', handleFlagHoverOut, true);
+        console.log('✅ [HATE-DETECT] Hover events re-enabled after clicking outside');
+        document.removeEventListener('click', removeMenu);
+      }
+    };
+    document.addEventListener('click', removeMenu);
+  }, 100);
+}
+
+function flagElement(element, flagType, flagLabel) {
+  console.log(`🚩 [HATE-DETECT] Flagging element as: ${flagType}`);
+  
+  // Remove inspect highlight
+  if (currentHighlightedElement) {
+    currentHighlightedElement.classList.remove('hate-inspect-highlight', 'locked');
+    currentHighlightedElement = null;
   }
+  if (highlightTooltip) {
+    highlightTooltip.remove();
+    highlightTooltip = null;
+  }
+  
+  // Apply blur overlay to flagged content
+  applyBlurOverlay(element, {
+    category: flagLabel,
+    confidence: 1.0,
+    userFlagged: true
+  });
+  
+  // Store flag info
+  flaggedElements.add(element);
+  element.__flagType = flagType;
+  element.__flagLabel = flagLabel;
+  element.__flagTimestamp = Date.now();
+  element.__hateFiltered = true; // Mark as filtered to avoid re-processing
+  
+  // TODO: Send to API or storage for tracking
+  console.log('✅ [HATE-DETECT] Element flagged and blurred:', {
+    type: flagType,
+    label: flagLabel,
+    text: element.textContent.substring(0, 100),
+    html: element.outerHTML.substring(0, 200)
+  });
+  
+  showFlagModeNotification(`✅ Content flagged and hidden: "${flagLabel}"`);
+}
+
+// Initialize flag mode when extension loads
+if (settings.feature2Enabled) {
+  initializeFlagMode();
 }
 
 /**
