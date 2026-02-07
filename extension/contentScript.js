@@ -1299,77 +1299,66 @@ function renderTooltip(tooltip, shadow, maidImageUrl, scoreClass, score, status,
       const rewriteIndex = parseInt(item.getAttribute('data-rewrite-index'));
       const rewriteText = suggestions[rewriteIndex];
       
-      console.log('🔄 SWAP DEBUG - Click detected');
-      console.log('  - Rewrite index:', rewriteIndex);
-      console.log('  - Rewrite text:', rewriteText);
-      console.log('  - Element:', element);
-      console.log('  - Element tag:', element?.tagName);
-      console.log('  - Element type:', element?.type);
-      console.log('  - contentEditable:', element?.contentEditable);
-      console.log('  - Current value:', element?.value);
-      console.log('  - Current textContent:', element?.textContent);
-      console.log('  - window.setEditableText available:', typeof window.setEditableText);
-      
-      if (!rewriteText) {
-        console.error('❌ No rewrite text found');
-        return;
-      }
-      
-      if (!element) {
-        console.error('❌ Element reference lost!');
+      if (!rewriteText || !element) {
         return;
       }
       
       try {
-        // Try multiple methods to set the text
         let success = false;
+        const oldValue = element.value || element.textContent || '';
         
-        // Method 1: Use window.setEditableText if available
-        if (window.setEditableText && typeof window.setEditableText === 'function') {
-          console.log('  → Trying window.setEditableText...');
-          window.setEditableText(element, rewriteText);
-          success = true;
-          console.log('  ✅ Called window.setEditableText');
-        } 
-        // Method 2: Direct property access
-        else if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-          console.log('  → Trying direct value assignment...');
-          const oldValue = element.value;
+        // Method 1: For INPUT/TEXTAREA elements
+        if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
           element.value = rewriteText;
-          console.log('  → After assignment, element.value:', element.value);
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+          element.selectionStart = element.selectionEnd = rewriteText.length;
           success = element.value === rewriteText;
-          console.log('  ✅ Value change:', oldValue, '→', element.value, '/ Success:', success);
         } 
-        // Method 3: ContentEditable
+        // Method 2: For contentEditable elements (Facebook/Instagram/Twitter)
         else if (element.contentEditable === 'true' || element.contentEditable === 'plaintext-only') {
-          console.log('  → Trying contentEditable...');
-          const oldText = element.textContent;
-          element.textContent = rewriteText;
-          element.innerText = rewriteText;
-          console.log('  → After assignment, element.textContent:', element.textContent);
-          success = element.textContent === rewriteText;
-          console.log('  ✅ Text change:', oldText, '→', element.textContent, '/ Success:', success);
-        } else {
-          console.error('  ❌ Element type not recognized!');
+          element.focus();
+          
+          // Try document.execCommand first (works on most modern browsers)
+          try {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand('selectAll', false, null);
+            document.execCommand('delete', false, null);
+            document.execCommand('insertText', false, rewriteText);
+            success = true;
+          } catch (e) {
+            // Fallback: Find and replace all text nodes
+            const replaceTextNodes = (node) => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                node.textContent = rewriteText;
+              } else if (node.nodeType === Node.ELEMENT_NODE) {
+                // For lexical-text spans (Facebook/Meta)
+                if (node.hasAttribute('data-lexical-text')) {
+                  node.textContent = rewriteText;
+                } else {
+                  // Recursively replace in children
+                  Array.from(node.childNodes).forEach(replaceTextNodes);
+                }
+              }
+            };
+            replaceTextNodes(element);
+            success = true;
+          }
+          
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
         if (success) {
-          // Dispatch events to trigger UI updates
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
+          console.log('🔄 Text replaced:', oldValue.substring(0, 30) + '... → ' + rewriteText.substring(0, 30) + '...');
           element.focus();
-          
-          // Set cursor position
-          if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-            element.selectionStart = element.selectionEnd = rewriteText.length;
-          }
-          
-          console.log('✅ Swapped successfully');
-          
-          // Award coins for using rewrite
           awardCoins(10, 'used a rewrite 🎉');
         } else {
-          console.error('❌ Text swap verification failed');
+          console.error('❌ Replacement failed');
         }
         
       } catch (error) {
@@ -2227,16 +2216,14 @@ function applyBlurOverlay(element, detectionResult) {
     `;
     
     if (isBlurred) {
-      // Show menu with Unblur, Rewrite, and Keep Blurred options
-      const hasRewrites = detectionResult.rewrites && detectionResult.rewrites.length > 0;
-      
+      // Show menu with Unblur, Rewrite, and Keep Blurred options (always show rewrite)
       menu.innerHTML = `
         <div class="hate-unblur-menu-title">Content Filtered</div>
         <div class="hate-unblur-reason">${reason}</div>
         ${detectionResult.message ? `<div class="hate-unblur-reason" style="font-size: 11px; margin-top: 4px; color: #666;">${detectionResult.message}</div>` : ''}
         <div class="hate-unblur-actions">
           <button class="hate-unblur-btn hate-unblur-btn-primary" data-action="unblur">👁️ Unblur</button>
-          ${hasRewrites ? '<button class="hate-unblur-btn hate-unblur-btn-rewrite" data-action="rewrite">✨ Rewrite</button>' : ''}
+          <button class="hate-unblur-btn hate-unblur-btn-rewrite" data-action="rewrite">✨ Rewrite</button>
           <button class="hate-unblur-btn hate-unblur-btn-secondary" data-action="keep">Keep Blurred</button>
         </div>
       `;
@@ -2248,32 +2235,82 @@ function applyBlurOverlay(element, detectionResult) {
         menu.remove();
       });
       
-      // Handle rewrite action (if available)
-      if (hasRewrites) {
-        menu.querySelector('[data-action="rewrite"]').addEventListener('click', (e) => {
-          e.stopPropagation();
+      // Handle rewrite action - always available
+      menu.querySelector('[data-action="rewrite"]').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        
+        const rewriteBtn = e.target;
+        const originalBtnText = rewriteBtn.innerHTML;
+        
+        try {
+          let rewriteText;
           
-          // Get the first rewrite suggestion
-          const rewriteText = detectionResult.rewrites[0];
+          // Check if we already have rewrites
+          if (detectionResult.rewrites && detectionResult.rewrites.length > 0) {
+            rewriteText = detectionResult.rewrites[0];
+          } else {
+            // Fetch rewrite from API
+            rewriteBtn.innerHTML = '⏳ Loading...';
+            rewriteBtn.disabled = true;
+            
+            const originalText = detectionResult.originalText || targetBlurElement.textContent;
+            const result = await apiClient.detectHateSpeech(originalText);
+            
+            if (result.rewrites && result.rewrites.length > 0) {
+              rewriteText = result.rewrites[0];
+            } else {
+              throw new Error('No rewrites available');
+            }
+          }
+          
+          if (!rewriteText) {
+            throw new Error('Rewrite text is empty');
+          }
+          
           const oldText = targetBlurElement.textContent;
           
-          // Replace the text content
-          targetBlurElement.textContent = rewriteText;
-          targetBlurElement.innerText = rewriteText;
+          // Replace text in all text nodes and lexical spans
+          const replaceAllText = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              node.textContent = rewriteText;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              // Handle Facebook/Meta lexical-text spans
+              if (node.hasAttribute('data-lexical-text')) {
+                node.textContent = rewriteText;
+              } else if (node.tagName === 'SPAN' || node.tagName === 'DIV') {
+                // For regular spans/divs, replace all children
+                Array.from(node.childNodes).forEach(replaceAllText);
+              }
+            }
+          };
+          
+          // Start replacement from target element
+          replaceAllText(targetBlurElement);
           
           // Verify the change
           const newText = targetBlurElement.textContent;
-          if (newText === rewriteText) {
-            console.log('✅ Rewrite success:', oldText.substring(0, 30) + '... → ' + rewriteText.substring(0, 30) + '...');
+          if (newText.includes(rewriteText.substring(0, 20))) {
+            console.log('🔄 Text replaced:', oldText.substring(0, 30) + '... → ' + rewriteText.substring(0, 30) + '...');
+            
+            // Unblur after rewriting
+            toggleBlur(false);
+            menu.remove();
           } else {
-            console.error('❌ Rewrite failed - text did not change');
+            throw new Error('Text replacement verification failed');
           }
           
-          // Unblur after rewriting
-          toggleBlur(false);
-          menu.remove();
-        });
-      }
+        } catch (error) {
+          console.error('❌ Rewrite error:', error.message);
+          rewriteBtn.innerHTML = originalBtnText;
+          rewriteBtn.disabled = false;
+          
+          // Show detailed error
+          const errorMsg = error.message.includes('No rewrites') 
+            ? 'No alternative text available for this content.'
+            : 'Could not modify this content. It may be protected by the platform.';
+          alert(errorMsg);
+        }
+      });
       
       // Handle keep blurred action
       menu.querySelector('[data-action="keep"]').addEventListener('click', (e) => {
