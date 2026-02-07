@@ -5,7 +5,6 @@ console.log('✅ Hate speech detection active');
 let settings = {
   feature1Enabled: true,
   feature2Enabled: true,
-  sensitivityLevel: 'medium',
   filterAction: 'blur',
   platformsEnabled: {
     facebook: true,
@@ -2752,12 +2751,7 @@ if (settings.feature2Enabled) {
  * Get sensitivity threshold (0-1)
  */
 function getSensitivityThreshold() {
-  const mapping = {
-    'low': 0.8,
-    'medium': 0.6,
-    'high': 0.4
-  };
-  return mapping[settings.sensitivityLevel] || 0.6;
+  return 0.6;
 }
 
 /**

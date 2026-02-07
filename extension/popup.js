@@ -4,7 +4,6 @@
 const defaultSettings = {
   feature1Enabled: true,
   feature2Enabled: true,
-  sensitivityLevel: 'medium',
   filterAction: 'blur',
   platformsEnabled: {
     facebook: true,
@@ -29,7 +28,6 @@ function loadSettings() {
     // Update UI
     document.getElementById('feature1Toggle').checked = settings.feature1Enabled;
     document.getElementById('feature2Toggle').checked = settings.feature2Enabled;
-    document.getElementById('sensitivityLevel').value = settings.sensitivityLevel;
     document.getElementById('filterAction').value = settings.filterAction;
     
     if (settings.platformsEnabled) {
@@ -67,11 +65,6 @@ function attachEventListeners() {
 
   document.getElementById('feature2Toggle').addEventListener('change', (e) => {
     saveSetting('feature2Enabled', e.target.checked);
-  });
-
-  // Sensitivity level
-  document.getElementById('sensitivityLevel').addEventListener('change', (e) => {
-    saveSetting('sensitivityLevel', e.target.value);
   });
 
   // Filter action
