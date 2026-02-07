@@ -1,6 +1,5 @@
 // Content script for DOM interaction and hate speech detection
-console.log('🚀 [HATE-DETECT] Content script file loaded!');
-console.log('🚀 [HATE-DETECT] Current URL:', window.location.href);
+console.log('✅ Hate speech detection active');
 
 // Settings
 let settings = {
@@ -168,6 +167,17 @@ function injectIndicatorStyles() {
       background: #d5dbdb !important;
     }
 
+    .hate-unblur-btn-rewrite {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+    }
+
+    .hate-unblur-btn-rewrite:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #63397d 100%) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
+    }
+
     /* Flagging styles - removed colored backgrounds */
     .hate-flag-mode {
       outline: 2px dashed #999 !important;
@@ -289,17 +299,11 @@ chrome.storage.sync.get(null, (data) => {
   if (data && Object.keys(data).length > 0) {
     settings = { ...settings, ...data };
   }
-  console.log('📦 [HATE-DETECT] Settings loaded:', settings);
   
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
-    console.log('⏳ [HATE-DETECT] DOM still loading, waiting...');
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('✅ [HATE-DETECT] DOM loaded, initializing...');
-      initializeExtension();
-    });
+    document.addEventListener('DOMContentLoaded', initializeExtension);
   } else {
-    console.log('✅ [HATE-DETECT] DOM already loaded, initializing immediately...');
     initializeExtension();
   }
 });
@@ -308,73 +312,48 @@ chrome.storage.sync.get(null, (data) => {
  * Initialize the extension
  */
 function initializeExtension() {
-  console.log('🚀 [HATE-DETECT] Extension loaded and initializing...');
-  console.log('🚀 [HATE-DETECT] Settings:', settings);
-  
   if (settings.feature1Enabled) {
-    console.log('✅ [HATE-DETECT] Feature 1 (Pre-Send Detection) enabled');
+    console.log('✅ Pre-send detection enabled');
     setupPreSendDetection();
-  } else {
-    console.log('❌ [HATE-DETECT] Feature 1 disabled');
   }
   
   if (settings.feature2Enabled) {
-    console.log('✅ [HATE-DETECT] Feature 2 (Incoming Filtering) enabled');
+    console.log('✅ Incoming filtering enabled');
     setupIncomingFiltering();
-  } else {
-    console.log('❌ [HATE-DETECT] Feature 2 disabled');
   }
-  
-  console.log('✅ [HATE-DETECT] Initialization complete');
 }
 
 /**
  * FEATURE 1: Pre-Send Hate Detection
  */
 function setupPreSendDetection() {
-  console.log('🔧 [HATE-DETECT] Setting up pre-send detection...');
-  console.log('🌐 [HATE-DETECT] Current site:', window.location.hostname);
-  
   injectIndicatorStyles();
-  console.log('✅ [HATE-DETECT] Styles injected');
-
   document.addEventListener('focusin', handleDocumentFocusIn, true);
-  console.log('✅ [HATE-DETECT] Focus listener added');
 
-  // Monitor for editable elements with more aggressive observation for dynamic sites
-  const observer = new MutationObserver((mutations) => {
-    console.log(`👀 [HATE-DETECT] DOM mutation detected (${mutations.length} changes), re-scanning for inputs`);
+  // Monitor for editable elements
+  const observer = new MutationObserver(() => {
     attachSendListeners();
   });
 
   observer.observe(document.body, {
     childList: true,
     subtree: true,
-    attributes: true, // Watch for attribute changes too
-    attributeFilter: ['contenteditable', 'role', 'aria-label', 'placeholder'] // Instagram changes these
+    attributes: true,
+    attributeFilter: ['contenteditable', 'role', 'aria-label', 'placeholder']
   });
-  console.log('✅ [HATE-DETECT] Mutation observer started (watching attributes)');
 
   // Initial setup
-  console.log('🔍 [HATE-DETECT] Scanning page for initial editable elements...');
   attachSendListeners();
   
   // For dynamic sites like Instagram, re-scan after delays
   const isInstagram = window.location.hostname.includes('instagram');
   if (isInstagram) {
-    console.log('📸 [HATE-DETECT] Instagram detected - using delayed scanning');
     setTimeout(() => {
-      console.log('🔍 [HATE-DETECT] Instagram: Re-scanning after 2s...');
       attachSendListeners();
     }, 2000);
     setTimeout(() => {
-      console.log('🔍 [HATE-DETECT] Instagram: Re-scanning after 5s...');
       attachSendListeners();
     }, 5000);
-    setTimeout(() => {
-      console.log('🔍 [HATE-DETECT] Instagram: Final re-scan after 8s...');
-      attachSendListeners();
-    }, 8000);
   }
 }
 
@@ -834,29 +813,20 @@ function positionIcon(icon, element) {
 let currentScoreData = {};
 
 async function handleIconClick(element, shadow) {
-  console.log('👆 [HATE-DETECT] Icon clicked!', element);
-  
-  // Make sure we keep the icon visible
   isClickingIcon = true;
   
-  const text = getEditableText(element);
-  console.log('📄 [HATE-DETECT] Extracted text:', text);
+  const text = window.getEditableText ? window.getEditableText(element) : (element.value || element.textContent || '');
   
   if (!text || text.trim().length === 0) {
-    console.log('⚠️ [HATE-DETECT] No text to analyze');
     showTooltip(shadow, 'No text to analyze', 'info');
     return;
   }
   
-  // Show loading state
-  console.log('⏳ [HATE-DETECT] Analyzing text...');
   showTooltip(shadow, 'Analyzing text...', 'loading');
   
   try {
     const result = await apiClient.detectHateSpeech(text);
-    console.log('✅ [HATE-DETECT] Analysis complete:', result);
-    const hateScore = Math.round((result.confidence || 0) * 100);
-    console.log('📊 [HATE-DETECT] Hate score:', hateScore);
+    const hateScore = Math.round((result.confidence || result.score || 0) * 100);
     
     // Store score data
     currentScoreData[element] = result;
@@ -864,9 +834,9 @@ async function handleIconClick(element, shadow) {
     // Update score badge
     updateScoreBadge(shadow, hateScore, result.is_hate);
     
-    // Show detailed tooltip
+    // Show detailed tooltip with message and rewrites
     const suggestions = generateSuggestions(result);
-    showDetailedScore(shadow, hateScore, result.is_hate, suggestions);
+    showDetailedScore(shadow, hateScore, result.is_hate, suggestions, result.message, element);
     
     // Reset clicking flag after tooltip is shown
     setTimeout(() => {
@@ -874,8 +844,7 @@ async function handleIconClick(element, shadow) {
     }, 500);
     
   } catch (error) {
-    console.error('❌ [HATE-DETECT] Error analyzing text:', error);
-    console.error('❌ [HATE-DETECT] Error stack:', error.stack);
+    console.error('❌ Analysis error:', error.message);
     showTooltip(shadow, 'Error analyzing text', 'error');
     // Reset clicking flag on error too
     setTimeout(() => {
@@ -913,6 +882,12 @@ function updateScoreBadge(shadow, score, isHate) {
 function generateSuggestions(result) {
   const suggestions = [];
   
+  // If backend provided rewrites, use them
+  if (result.rewrites && result.rewrites.length > 0) {
+    return result.rewrites;
+  }
+  
+  // Otherwise, provide generic suggestions
   if (result.is_hate) {
     suggestions.push('Consider rephrasing your message to be more respectful');
     suggestions.push('Avoid using offensive or discriminatory language');
@@ -928,7 +903,7 @@ function generateSuggestions(result) {
 /**
  * Show detailed score tooltip
  */
-function showDetailedScore(shadow, score, isHate, suggestions) {
+function showDetailedScore(shadow, score, isHate, suggestions, warningMessage = null, element = null) {
   // Remove existing tooltip
   const existingTooltip = shadow.querySelector('.score-tooltip');
   if (existingTooltip) {
@@ -1014,6 +989,23 @@ function showDetailedScore(shadow, score, isHate, suggestions) {
       letter-spacing: 0.5px;
     }
     
+    .warning-message {
+      background: #fff3cd;
+      border-left: 3px solid #f39c12;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #856404;
+      line-height: 1.4;
+    }
+    
+    .warning-message.high {
+      background: #f8d7da;
+      border-left-color: #e74c3c;
+      color: #721c24;
+    }
+    
     .suggestions {
       margin-top: 12px;
     }
@@ -1034,11 +1026,72 @@ function showDetailedScore(shadow, score, isHate, suggestions) {
       margin-bottom: 6px;
       line-height: 1.4;
     }
+    
+    .rewrite-item {
+      font-size: 11px;
+      color: #2c3e50;
+      padding: 8px 10px;
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      line-height: 1.4;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .rewrite-item:hover {
+      background: #c8e6c9;
+      transform: translateX(2px);
+    }
+    
+    .rewrite-label {
+      font-size: 10px;
+      color: #4caf50;
+      font-weight: bold;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
   `;
   shadow.appendChild(tooltipStyle);
   
   const scoreClass = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
   const status = isHate ? 'Warning' : 'Safe';
+  
+  // Build warning message HTML
+  let warningHTML = '';
+  if (warningMessage && isHate) {
+    const warningClass = score >= 70 ? 'high' : '';
+    warningHTML = `<div class="warning-message ${warningClass}">${warningMessage}</div>`;
+  }
+  
+  // Build suggestions/rewrites HTML
+  let suggestionsHTML = '';
+  if (suggestions && suggestions.length > 0) {
+    if (isHate && suggestions.length > 0 && suggestions[0] !== 'Your message looks good!') {
+      // These are rewrites - make them clickable
+      // Escape the text properly for data attribute
+      suggestionsHTML = `
+        <div class="suggestions">
+          <div class="suggestions-title">💡 Suggested Rewrites (click to apply):</div>
+          ${suggestions.map((s, index) => `
+            <div class="rewrite-item" data-rewrite-index="${index}">
+              ${s}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      // These are general suggestions
+      suggestionsHTML = `
+        <div class="suggestions">
+          <div class="suggestions-title">Suggestions:</div>
+          ${suggestions.map(s => `<div class="suggestion-item">• ${s}</div>`).join('')}
+        </div>
+      `;
+    }
+  }
   
   tooltip.innerHTML = `
     <div class="tooltip-header">
@@ -1049,10 +1102,8 @@ function showDetailedScore(shadow, score, isHate, suggestions) {
       <div class="score-number ${scoreClass}">${score}</div>
       <div class="score-label">${status}</div>
     </div>
-    <div class="suggestions">
-      <div class="suggestions-title">Suggestions:</div>
-      ${suggestions.map(s => `<div class="suggestion-item">• ${s}</div>`).join('')}
-    </div>
+    ${warningHTML}
+    ${suggestionsHTML}
   `;
   
   shadow.appendChild(tooltip);
@@ -1072,12 +1123,106 @@ function showDetailedScore(shadow, score, isHate, suggestions) {
     isClickingIcon = false;
   });
   
-  // Auto-hide after 10 seconds
+  // Rewrite click handlers - store suggestions array for retrieval
+  const rewriteItems = tooltip.querySelectorAll('.rewrite-item');
+  
+  rewriteItems.forEach((item, idx) => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const rewriteIndex = parseInt(item.getAttribute('data-rewrite-index'));
+      const rewriteText = suggestions[rewriteIndex];
+      
+      console.log('🔄 SWAP DEBUG - Click detected');
+      console.log('  - Rewrite index:', rewriteIndex);
+      console.log('  - Rewrite text:', rewriteText);
+      console.log('  - Element:', element);
+      console.log('  - Element tag:', element?.tagName);
+      console.log('  - Element type:', element?.type);
+      console.log('  - contentEditable:', element?.contentEditable);
+      console.log('  - Current value:', element?.value);
+      console.log('  - Current textContent:', element?.textContent);
+      console.log('  - window.setEditableText available:', typeof window.setEditableText);
+      
+      if (!rewriteText) {
+        console.error('❌ No rewrite text found');
+        return;
+      }
+      
+      if (!element) {
+        console.error('❌ Element reference lost!');
+        return;
+      }
+      
+      try {
+        // Try multiple methods to set the text
+        let success = false;
+        
+        // Method 1: Use window.setEditableText if available
+        if (window.setEditableText && typeof window.setEditableText === 'function') {
+          console.log('  → Trying window.setEditableText...');
+          window.setEditableText(element, rewriteText);
+          success = true;
+          console.log('  ✅ Called window.setEditableText');
+        } 
+        // Method 2: Direct property access
+        else if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+          console.log('  → Trying direct value assignment...');
+          const oldValue = element.value;
+          element.value = rewriteText;
+          console.log('  → After assignment, element.value:', element.value);
+          success = element.value === rewriteText;
+          console.log('  ✅ Value change:', oldValue, '→', element.value, '/ Success:', success);
+        } 
+        // Method 3: ContentEditable
+        else if (element.contentEditable === 'true' || element.contentEditable === 'plaintext-only') {
+          console.log('  → Trying contentEditable...');
+          const oldText = element.textContent;
+          element.textContent = rewriteText;
+          element.innerText = rewriteText;
+          console.log('  → After assignment, element.textContent:', element.textContent);
+          success = element.textContent === rewriteText;
+          console.log('  ✅ Text change:', oldText, '→', element.textContent, '/ Success:', success);
+        } else {
+          console.error('  ❌ Element type not recognized!');
+        }
+        
+        if (success) {
+          // Dispatch events to trigger UI updates
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+          element.focus();
+          
+          // Set cursor position
+          if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+            element.selectionStart = element.selectionEnd = rewriteText.length;
+          }
+          
+          console.log('✅ Swapped successfully');
+        } else {
+          console.error('❌ Text swap verification failed');
+        }
+        
+      } catch (error) {
+        console.error('❌ Text swap error:', error.message);
+      }
+      
+      // Close tooltip
+      tooltip.remove();
+      isClickingIcon = false;
+      
+      // Re-analyze the new text
+      setTimeout(() => scheduleScoreUpdate(element), 500);
+    });
+  });
+  
+  // Auto-hide after 15 seconds (longer for rewrites)
   setTimeout(() => {
     if (tooltip.parentNode) {
       tooltip.remove();
     }
-  }, 10000);
+  }, 15000);
 }
 
 /**
@@ -1151,12 +1296,9 @@ async function scheduleScoreUpdate(element) {
   
   // Set new timer (debounce)
   const timer = setTimeout(async () => {
-    console.log('🔍 [HATE-DETECT] Timer fired, updating score...');
-    const text = getEditableText(element);
-    console.log('📝 [HATE-DETECT] Current text:', text);
+    const text = window.getEditableText ? window.getEditableText(element) : (element.value || element.textContent || '');
     
     if (!text || text.trim().length === 0) {
-      console.log('⏭️ [HATE-DETECT] No text, hiding badge');
       // Reset badge if no text
       const icon = element.__hateDetectIcon;
       if (icon && icon.__hateDetectShadow) {
@@ -1172,7 +1314,7 @@ async function scheduleScoreUpdate(element) {
       console.log('📡 [HATE-DETECT] Calling API for score update...');
       const result = await apiClient.detectHateSpeech(text);
       console.log('✅ [HATE-DETECT] API response:', result);
-      const hateScore = Math.round((result.confidence || 0) * 100);
+      const hateScore = Math.round((result.confidence || result.score || 0) * 100);
       console.log('📊 [HATE-DETECT] Calculated score:', hateScore);
       
       // Update the badge
@@ -1215,7 +1357,7 @@ function handleKeyboardSend(event) {
   event.stopPropagation();
 
   const element = event.target;
-  const text = getEditableText(element);
+  const text = window.getEditableText ? window.getEditableText(element) : (element.value || element.textContent || '');
 
   processTextForSending(text, element);
 }
@@ -1224,7 +1366,7 @@ function handleKeyboardSend(event) {
  * Handle send button click
  */
 function handleSendButtonClick(event, editableElement) {
-  const text = getEditableText(editableElement);
+  const text = window.getEditableText ? window.getEditableText(editableElement) : (editableElement ? (editableElement.value || editableElement.textContent || '') : '');
   
   if (text.trim().length === 0) return;
 
@@ -1401,7 +1543,22 @@ async function handleRewriteRequest(originalText, editableElement, oldModal) {
       const textarea = document.getElementById('hateRewriteTextarea');
       const finalText = textarea.value;
       modal.remove();
-      setEditableText(editableElement, finalText);
+      
+      // Use window.setEditableText with fallback
+      if (window.setEditableText) {
+        window.setEditableText(editableElement, finalText);
+      } else {
+        // Fallback: set text directly
+        if (editableElement.tagName === 'TEXTAREA' || editableElement.tagName === 'INPUT') {
+          editableElement.value = finalText;
+        } else if (editableElement.contentEditable === 'true' || editableElement.contentEditable === 'plaintext-only') {
+          editableElement.textContent = finalText;
+        }
+        // Trigger events
+        editableElement.dispatchEvent(new Event('input', { bubbles: true }));
+        editableElement.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      
       actuallyAllowSend(editableElement);
     });
   } catch (error) {
@@ -1428,19 +1585,18 @@ function actuallyAllowSend(editableElement) {
       code: 'Enter',
       keyCode: 13,
       which: 13,
-      bubbles: true,
-      cancelable: true,
-      ctrlKey: true
+      bubbles: true
     });
     editableElement.dispatchEvent(event);
   }
 }
 
 /**
- * FEATURE 2: Incoming Hate Filtering
+ * FEATURE 2: Incoming Content Filtering
+ * Monitor DOM for hateful messages and blur them
  */
 function setupIncomingFiltering() {
-  console.log('🔍 [HATE-DETECT] Setting up incoming content filtering...');
+  console.log('✅ Incoming content filtering active');
   
   const observer = new MutationObserver(() => {
     filterHateContent();
@@ -1452,79 +1608,82 @@ function setupIncomingFiltering() {
     characterData: false
   });
 
-  // Initial scan
-  filterHateContent();
+  // Initial scan after short delay
+  setTimeout(() => {
+    console.log('🔍 Initial content scan...');
+    filterHateContent();
+  }, 1000);
   
   // Re-scan periodically for dynamic content
   setInterval(() => {
     filterHateContent();
-  }, 3000);
-  
-  console.log('✅ [HATE-DETECT] Incoming filtering active');
+  }, 5000);
 }
 
 /**
  * Find and filter hateful messages in the DOM
  */
 async function filterHateContent() {
+  console.log('🔍 [BLUR] Scanning for comments...');
   const messageElements = getMessageElements();
-  console.log(`📨 [HATE-DETECT] Scanning ${messageElements.length} potential content items...`);
+  console.log(`🔍 [BLUR] Found ${messageElements.length} message elements to check`);
+
+  if (messageElements.length === 0) {
+    console.log('⚠️ [BLUR] No message elements found!');
+    return;
+  }
 
   for (const item of messageElements) {
     const element = item.element;
     const type = item.type;
     
-    if (element.__hateFiltered) continue; // Already filtered
+    console.log(`  - Checking element: ${element.tagName}, type: ${type}`);
+    
+    if (element.__hateFiltered) {
+      console.log('    ⏭️ Already filtered');
+      continue; // Already filtered
+    }
 
     // Find the deepest text-containing div
     const textElement = findDeepestTextDiv(element);
     if (!textElement) {
-      console.log('⚠️ [HATE-DETECT] No text div found, skipping...');
+      console.log('    ⏭️ No text element found');
       continue;
     }
 
     const text = textElement.textContent;
-    if (!text || text.trim().length === 0) continue;
-
-    // Skip very long texts to avoid performance issues
-    if (text.length > 10000) continue;
-
-    // Apply border color based on type
-    const colorClass = {
-      'dm': 'hate-detect-dm',
-      'post-message': 'hate-detect-post-message',
-      'comment': 'hate-detect-comment'
-    }[type] || 'hate-detect-dm';
+    if (!text || text.trim().length === 0 || text.length > 10000) {
+      console.log('    ⏭️ Invalid text length:', text?.length);
+      continue;
+    }
     
-    textElement.classList.add(colorClass);
+    console.log(`    📝 Analyzing text: "${text.substring(0, 50)}..."`);
+
+    // Mark as filtered
     element.__hateFiltered = true;
-    console.log(`✅ [HATE-DETECT] ${type} detected and marked with ${colorClass}`);
 
-    // TODO: Call API here when ready
-    // For now, we'll just mark elements as detected and ready for blur
-    // Simulate detection (will be replaced with actual API call)
-    const shouldBlur = simulateHateDetection(text);
-    
-    if (shouldBlur) {
-      console.log('⚠️ [HATE-DETECT] Potentially harmful content detected, applying blur...');
-      applyBlurOverlay(textElement, {
-        category: 'potentially harmful',
-        confidence: 0.85
-      });
+    // Call API to detect hate speech
+    try {
+      console.log('    🔄 Calling API...');
+      const result = await apiClient.detectHateSpeech(text);
+      console.log(`    📊 API result: is_hate=${result.is_hate}, score=${result.score}`);
+      
+      if (result.is_hate && result.score >= 0.4) {
+        console.log(`    ⚠️ Hate detected (${Math.round(result.score * 100)}%): Applying blur`);
+        applyBlurOverlay(textElement, {
+          category: result.category || 'harmful content',
+          confidence: result.score,
+          message: result.message,
+          rewrites: result.rewrites || [],
+          originalText: text
+        });
+      } else {
+        console.log('    ✅ Content is safe');
+      }
+    } catch (error) {
+      console.error('    ❌ Detection failed:', error.message);
     }
   }
-}
-
-/**
- * Simulate hate detection (temporary - will be replaced with API call)
- * This is a placeholder for the actual API integration
- */
-function simulateHateDetection(text) {
-  // TODO: Replace this with actual API call
-  // return false for now to not blur everything
-  // You can test by uncommenting the line below
-  // return text.length > 50; // Just for testing
-  return false;
 }
 
 /**
@@ -1534,11 +1693,20 @@ function getMessageElements() {
   const elements = [];
   const hostname = window.location.hostname;
   
-  console.log(`🔍 [HATE-DETECT] Scanning for content on ${hostname}...`);
+  // Generic detection for test pages and other sites
+  // Look for role="article" or common comment patterns
+  const genericComments = document.querySelectorAll('[role="article"], .comment-body, [data-test-comment="true"]');
+  if (genericComments.length > 0) {
+    console.log(`📝 Found ${genericComments.length} generic comments/articles`);
+    genericComments.forEach(comment => {
+      if (hasTextContent(comment) && !comment.__hateFiltered) {
+        elements.push({ element: comment, type: 'comment' });
+      }
+    });
+  }
   
   // Facebook DM detection
   if (hostname.includes('facebook.com') || hostname.includes('messenger.com')) {
-    console.log('📘 [HATE-DETECT] Facebook detected - scanning DMs and comments...');
     
     // Facebook Messenger DMs - limit to conversation containers
     const conversationContainers = document.querySelectorAll('[aria-label*="Messages in conversation with"]');
@@ -1552,19 +1720,25 @@ function getMessageElements() {
       });
     });
     
-    // Facebook posts with messages (look for posts with specific message content)
+    // Facebook posts with messages (look for any element with "message" in attributes)
     const fbPosts = document.querySelectorAll('[data-pagelet="FeedUnit"], [role="article"]');
     console.log(`  - Found ${fbPosts.length} Facebook posts`);
     fbPosts.forEach(post => {
-      // Look for message divs within posts
-      const messageDivs = post.querySelectorAll('[class*="message"], [data-ad-rendering-role="message"]');
-      if (messageDivs.length > 0) {
-        messageDivs.forEach(msg => {
-          if (hasTextContent(msg)) {
-            elements.push({ element: msg, type: 'post-message' });
-          }
-        });
-      }
+      // Look for any element with "message" in any attribute (name or value)
+      const allElements = post.querySelectorAll('*');
+      const messageDivs = Array.from(allElements).filter(el => {
+        return Array.from(el.attributes || []).some(attr => 
+          attr.value.toLowerCase().includes('message')
+        );
+      });
+      
+      console.log(`    - Found ${messageDivs.length} message elements in post`);
+      
+      messageDivs.forEach(msg => {
+        if (hasTextContent(msg)) {
+          elements.push({ element: msg, type: 'post-message' });
+        }
+      });
     });
     
     // Facebook comments - aria-label="Comment by"
@@ -1757,12 +1931,6 @@ function applyBlurOverlay(element, detectionResult) {
   
   // Find the best text element to blur
   const targetBlurElement = findSmallestTextElement(element);
-  console.log('🎯 [HATE-DETECT] Target blur element:', targetBlurElement);
-  console.log('📏 [HATE-DETECT] Target dimensions:', {
-    width: targetBlurElement.offsetWidth,
-    height: targetBlurElement.offsetHeight,
-    visible: targetBlurElement.offsetParent !== null
-  });
   
   // Make parent element relative for positioning
   const originalPosition = window.getComputedStyle(element).position;
@@ -1772,7 +1940,6 @@ function applyBlurOverlay(element, detectionResult) {
   
   // Apply blur to the target element
   targetBlurElement.classList.add('hate-content-blurred');
-  console.log('✅ [HATE-DETECT] Blur class added to:', targetBlurElement.tagName, targetBlurElement.className);
   
   // Also add inline styles to ensure blur is applied
   targetBlurElement.style.filter = 'blur(10px)';
@@ -1821,7 +1988,6 @@ function applyBlurOverlay(element, detectionResult) {
   // Click FAB to show unblur menu
   fab.addEventListener('click', (e) => {
     e.stopPropagation();
-    console.log('💬 [HATE-DETECT] FAB clicked, showing menu');
     
     // Remove existing menu if any
     const existingMenu = element.querySelector('.hate-unblur-menu');
@@ -1835,11 +2001,16 @@ function applyBlurOverlay(element, detectionResult) {
     menu.className = 'hate-unblur-menu';
     
     if (isBlurred) {
+      // Show menu with Unblur, Rewrite, and Keep Blurred options
+      const hasRewrites = detectionResult.rewrites && detectionResult.rewrites.length > 0;
+      
       menu.innerHTML = `
         <div class="hate-unblur-menu-title">Content Filtered</div>
         <div class="hate-unblur-reason">${reason}</div>
+        ${detectionResult.message ? `<div class="hate-unblur-reason" style="font-size: 11px; margin-top: 4px; color: #666;">${detectionResult.message}</div>` : ''}
         <div class="hate-unblur-actions">
           <button class="hate-unblur-btn hate-unblur-btn-primary" data-action="unblur">👁️ Unblur</button>
+          ${hasRewrites ? '<button class="hate-unblur-btn hate-unblur-btn-rewrite" data-action="rewrite">✨ Rewrite</button>' : ''}
           <button class="hate-unblur-btn hate-unblur-btn-secondary" data-action="keep">Keep Blurred</button>
         </div>
       `;
@@ -1847,11 +2018,38 @@ function applyBlurOverlay(element, detectionResult) {
       // Handle unblur action
       menu.querySelector('[data-action="unblur"]').addEventListener('click', (e) => {
         e.stopPropagation();
-        console.log('👁️ [HATE-DETECT] User chose to unblur content');
         toggleBlur(false);
         menu.remove();
       });
       
+      // Handle rewrite action (if available)
+      if (hasRewrites) {
+        menu.querySelector('[data-action="rewrite"]').addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          // Get the first rewrite suggestion
+          const rewriteText = detectionResult.rewrites[0];
+          const oldText = targetBlurElement.textContent;
+          
+          // Replace the text content
+          targetBlurElement.textContent = rewriteText;
+          targetBlurElement.innerText = rewriteText;
+          
+          // Verify the change
+          const newText = targetBlurElement.textContent;
+          if (newText === rewriteText) {
+            console.log('✅ Rewrite success:', oldText.substring(0, 30) + '... → ' + rewriteText.substring(0, 30) + '...');
+          } else {
+            console.error('❌ Rewrite failed - text did not change');
+          }
+          
+          // Unblur after rewriting
+          toggleBlur(false);
+          menu.remove();
+        });
+      }
+      
+      // Handle keep blurred action
       menu.querySelector('[data-action="keep"]').addEventListener('click', (e) => {
         e.stopPropagation();
         console.log('🚫 [HATE-DETECT] User chose to keep content blurred');

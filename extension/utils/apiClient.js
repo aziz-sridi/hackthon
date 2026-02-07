@@ -6,12 +6,45 @@ class APIClient {
     this.cache = new Map();
     this.requestQueue = [];
     this.isProcessing = false;
-    this.apiBaseUrl = 'https://api.example.com'; // Replace with actual API
-    this.apiKey = ''; // Will be set from settings
+    this.apiBaseUrl = 'http://localhost:5000'; // Backend server URL
+    this.sessionEstablished = false;
   }
 
   /**
-   * Detect hate speech in text
+   * Establish connection with backend (sets session cookie)
+   * @returns {Promise<boolean>} Success status
+   */
+  async connect() {
+    if (this.sessionEstablished) {
+      return true;
+    }
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/connect`, {
+        method: 'POST',
+        credentials: 'include', // Important: sends and receives cookies
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ items: [] })
+      });
+
+      if (response.ok) {
+        this.sessionEstablished = true;
+        console.log('✅ Backend session established');
+        return true;
+      } else {
+        console.error('❌ Failed to establish backend session');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Connection error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Detect hate speech in text using backend AI
    * @param {string} text - The text to analyze
    * @returns {Promise<Object>} Hate detection result
    */
@@ -19,8 +52,11 @@ class APIClient {
     if (!text || text.trim().length === 0) {
       return {
         is_hate: false,
+        score: 0,
         confidence: 0,
         category: null,
+        message: null,
+        rewrites: [],
         cached: false
       };
     }
@@ -33,43 +69,74 @@ class APIClient {
       return result;
     }
 
+    // Ensure connection is established
+    await this.connect();
+
     try {
-      // Use local mock detection for now
-      // Replace with actual API call in production
-      const result = await this._localHateDetection(text);
+      const response = await fetch(`${this.apiBaseUrl}/api/detect`, {
+        method: 'POST',
+        credentials: 'include', // Send cookies with request
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      // Cache the result
-      this._cacheResult(cacheKey, result);
-      result.cached = false;
-      return result;
-    } catch (error) {
-      console.error('Hate detection error:', error);
-      return {
-        is_hate: false,
-        confidence: 0,
-        category: null,
-        error: error.message
+      // Normalize response format for compatibility
+      const normalizedResult = {
+        is_hate: result.is_hate || false,
+        score: result.score || 0,
+        confidence: result.score || 0, // Use score as confidence
+        category: result.category || null,
+        sentiment: result.sentiment || 'neutral',
+        message: result.message || null,
+        rewrites: result.rewrites || [],
+        severity: result.severity || null,
+        cached: false
       };
+
+      // Cache the result
+      this._cacheResult(cacheKey, normalizedResult);
+      
+      return normalizedResult;
+    } catch (error) {
+      console.error('❌ Hate detection error:', error);
+      // Fallback to local detection if backend is unavailable
+      console.log('⚠️ Falling back to local detection');
+      return await this._localHateDetection(text);
     }
   }
 
   /**
-   * Rewrite text to remove hate speech
+   * Rewrite text to remove hate speech (uses detection results)
    * @param {string} originalText - The original text
-   * @returns {Promise<string>} Rewritten text
+   * @returns {Promise<Object>} Rewrite result with alternatives
    */
   async rewriteText(originalText) {
     if (!originalText || originalText.trim().length === 0) {
-      return originalText;
+      return { original: originalText, rewrites: [], message: null };
     }
 
     try {
-      // Use local mock rewriting for now
-      // Replace with actual API call in production
-      return await this._localRewrite(originalText);
+      // Detection already provides rewrites, so just call detect
+      const detection = await this.detectHateSpeech(originalText);
+      
+      return {
+        original: originalText,
+        rewrites: detection.rewrites || [],
+        message: detection.message || null,
+        is_hate: detection.is_hate,
+        score: detection.score
+      };
     } catch (error) {
-      console.error('Rewrite error:', error);
-      return originalText;
+      console.error('❌ Rewrite error:', error);
+      return { original: originalText, rewrites: [], message: null };
     }
   }
 
@@ -230,3 +297,6 @@ class APIClient {
 
 // Create global instance
 const apiClient = new APIClient();
+
+// Expose globally for cross-script access
+window.apiClient = apiClient;
