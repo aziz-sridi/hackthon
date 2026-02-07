@@ -95,6 +95,11 @@ function attachEventListeners() {
   // Debug buttons
   document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
   document.getElementById('resetSettingsBtn').addEventListener('click', resetSettings);
+  
+  // Shop button
+  document.getElementById('shopBtn').addEventListener('click', () => {
+    window.location.href = 'shop.html';
+  });
 }
 
 /**

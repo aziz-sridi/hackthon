@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Hate Speech Prevention & Protection",
+  "name": "Chromium Maid",
   "version": "1.0.0",
   "description": "Detect and filter hate speech on social media platforms",
   "permissions": [
@@ -38,5 +38,14 @@
   ],
   "action": {
     "default_popup": "popup.html"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "mascots/default_maid/*.jpeg",
+        "mascots/for_sale/*.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

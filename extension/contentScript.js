@@ -16,6 +16,42 @@ let settings = {
 
 const HATE_BADGE_TEXT = 'HS';
 
+// Coin reward system
+function awardCoins(amount, message) {
+  chrome.storage.local.get(['coins'], (result) => {
+    const currentCoins = result.coins || 1000;
+    const newCoins = currentCoins + amount;
+    
+    chrome.storage.local.set({ coins: newCoins }, () => {
+      console.log(`💰 Earned ${amount} coins! ${message}`);
+      showCoinNotification(amount, message);
+    });
+  });
+}
+
+function showCoinNotification(amount, message) {
+  const notification = document.createElement('div');
+  notification.className = 'coin-notification';
+  notification.innerHTML = `
+    <span class="coin-icon">🪙</span>
+    <div class="coin-message">
+      <strong>+${amount}</strong>
+      <p>${message}</p>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
 function injectIndicatorStyles() {
   if (document.getElementById('hateDetectStyles')) return;
 
@@ -54,11 +90,9 @@ function injectIndicatorStyles() {
       user-select: auto !important;
     }
 
-    /* Floating FAB for unblurring */
+    /* Floating FAB for unblurring - uses fixed positioning, appended to body */
     .hate-blur-fab {
-      position: absolute !important;
-      bottom: 8px !important;
-      right: 8px !important;
+      position: fixed !important;
       width: 40px !important;
       height: 40px !important;
       border-radius: 50% !important;
@@ -69,10 +103,13 @@ function injectIndicatorStyles() {
       align-items: center !important;
       justify-content: center !important;
       font-size: 18px !important;
-      z-index: 1001 !important;
+      z-index: 999999 !important;
       cursor: pointer !important;
       box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
       transition: all 0.2s ease !important;
+      pointer-events: auto !important;
+      filter: none !important;
+      isolation: isolate !important;
     }
 
     .hate-blur-fab:hover {
@@ -85,20 +122,21 @@ function injectIndicatorStyles() {
       transform: scale(0.95) !important;
     }
 
-    /* Unblur menu that appears when FAB is clicked */
+    /* Unblur menu that appears when FAB is clicked - uses fixed positioning, appended to body */
     .hate-unblur-menu {
-      position: absolute !important;
-      bottom: 55px !important;
-      right: 8px !important;
+      position: fixed !important;
       background: white !important;
       border: 1px solid #ddd !important;
       border-radius: 8px !important;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
       padding: 12px !important;
       min-width: 220px !important;
-      z-index: 1002 !important;
+      z-index: 1000000 !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
       animation: slideInUp 0.2s ease !important;
+      pointer-events: auto !important;
+      filter: none !important;
+      isolation: isolate !important;
     }
 
     @keyframes slideInUp {
@@ -265,6 +303,54 @@ function injectIndicatorStyles() {
       border: 3px solid #ffff00 !important;
       box-shadow: 0 0 10px rgba(255, 255, 0, 0.5) !important;
       transition: all 0.3s ease !important;
+    }
+
+    /* Coin notification */
+    .coin-notification {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #735AC1 0%, #8E82E3 100%);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(115, 90, 193, 0.4);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 300px;
+    }
+    
+    .coin-notification.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    
+    .coin-notification .coin-icon {
+      font-size: 32px;
+      animation: coinBounce 0.6s ease;
+    }
+    
+    .coin-notification .coin-message strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .coin-notification .coin-message p {
+      font-size: 13px;
+      opacity: 0.9;
+      margin: 0;
+    }
+    
+    @keyframes coinBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2) rotate(10deg); }
     }
 
     /* Animations */
@@ -610,11 +696,11 @@ function injectIconIntoInput(element) {
       transform: scale(0.95);
     }
     
-    .icon-text {
-      color: white;
-      font-size: 11px;
-      font-weight: bold;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    .icon-maid {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      border-radius: 3px;
       user-select: none;
     }
     
@@ -654,7 +740,25 @@ function injectIconIntoInput(element) {
   
   const button = document.createElement('div');
   button.className = 'icon-button';
-  button.innerHTML = '<span class="icon-text">HS</span>';
+  
+  // Get active mascot for icon
+  chrome.storage.local.get(['activeTheme'], (result) => {
+    const activeMascot = result.activeTheme || 'default';
+    let iconImage = 'mascots/default_maid/';
+    
+    if (activeMascot === 'default' || !activeMascot) {
+      iconImage += 'maid_ok.jpeg'; // Use default maid ok face for icon
+    } else if (activeMascot === 'blondie') {
+      iconImage = 'mascots/for_sale/blondie maid.png';
+    } else if (activeMascot === 'gigia') {
+      iconImage = 'mascots/for_sale/gigia.png';
+    } else if (activeMascot === 'potato') {
+      iconImage = 'mascots/for_sale/potato.png';
+    }
+    
+    const iconImageUrl = chrome.runtime.getURL(iconImage);
+    button.innerHTML = `<img src="${iconImageUrl}" class="icon-maid" alt="Maid">`;
+  });
   
   const scoreBadge = document.createElement('div');
   scoreBadge.className = 'score-badge';
@@ -968,8 +1072,24 @@ function showDetailedScore(shadow, score, isHate, suggestions, warningMessage = 
     }
     
     .score-display {
-      text-align: center;
+      display: flex;
+      flex-direction: row-reverse;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
       margin-bottom: 12px;
+      overflow: hidden;
+    }
+    
+    .maid-mascot {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    
+    .score-info {
+      text-align: center;
     }
     
     .score-number {
@@ -1059,39 +1179,82 @@ function showDetailedScore(shadow, score, isHate, suggestions, warningMessage = 
   const scoreClass = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
   const status = isHate ? 'Warning' : 'Safe';
   
-  // Build warning message HTML
-  let warningHTML = '';
-  if (warningMessage && isHate) {
-    const warningClass = score >= 70 ? 'high' : '';
-    warningHTML = `<div class="warning-message ${warningClass}">${warningMessage}</div>`;
-  }
-  
-  // Build suggestions/rewrites HTML
-  let suggestionsHTML = '';
-  if (suggestions && suggestions.length > 0) {
-    if (isHate && suggestions.length > 0 && suggestions[0] !== 'Your message looks good!') {
-      // These are rewrites - make them clickable
-      // Escape the text properly for data attribute
-      suggestionsHTML = `
-        <div class="suggestions">
-          <div class="suggestions-title">💡 Suggested Rewrites (click to apply):</div>
-          ${suggestions.map((s, index) => `
-            <div class="rewrite-item" data-rewrite-index="${index}">
-              ${s}
-            </div>
-          `).join('')}
-        </div>
-      `;
-    } else {
-      // These are general suggestions
-      suggestionsHTML = `
-        <div class="suggestions">
-          <div class="suggestions-title">Suggestions:</div>
-          ${suggestions.map(s => `<div class="suggestion-item">• ${s}</div>`).join('')}
-        </div>
-      `;
+  // Get active mascot from storage (default to default_maid)
+  chrome.storage.local.get(['activeTheme'], (result) => {
+    const activeMascot = result.activeTheme || 'default';
+    
+    let maidFolder = 'default_maid';
+    if (activeMascot === 'blondie') {
+      maidFolder = 'for_sale';
+    } else if (activeMascot === 'gigia') {
+      maidFolder = 'for_sale';
+    } else if (activeMascot === 'potato') {
+      maidFolder = 'for_sale';
     }
-  }
+    
+    // Determine which emotion/image to show based on score
+    let maidImage = `mascots/${maidFolder}/`;
+    if (maidFolder === 'default_maid') {
+      if (score >= 70) {
+        maidImage += 'maid_angry.jpeg';
+      } else if (score >= 50) {
+        maidImage += 'maid_mad.jpeg';
+      } else if (score >= 30) {
+        maidImage += 'maid_meh.jpeg';
+      } else {
+        maidImage += 'maid_ok.jpeg';
+      }
+    } else {
+      // For purchased mascots, just show the single image
+      if (activeMascot === 'blondie') {
+        maidImage += 'blondie maid.png';
+      } else if (activeMascot === 'gigia') {
+        maidImage += 'gigia.png';
+      } else if (activeMascot === 'potato') {
+        maidImage += 'potato.png';
+      }
+    }
+    
+    const maidImageUrl = chrome.runtime.getURL(maidImage);
+    
+    // Build warning message HTML
+    let warningHTML = '';
+    if (warningMessage && isHate) {
+      const warningClass = score >= 70 ? 'high' : '';
+      warningHTML = `<div class="warning-message ${warningClass}">${warningMessage}</div>`;
+    }
+    
+    // Build suggestions/rewrites HTML
+    let suggestionsHTML = '';
+    if (suggestions && suggestions.length > 0) {
+      if (isHate && suggestions.length > 0 && suggestions[0] !== 'Your message looks good!') {
+        // These are rewrites - make them clickable
+        suggestionsHTML = `
+          <div class="suggestions">
+            <div class="suggestions-title">💡 Suggested Rewrites (click to apply):</div>
+            ${suggestions.map((s, index) => `
+              <div class="rewrite-item" data-rewrite-index="${index}">
+                ${s}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        // These are general suggestions
+        suggestionsHTML = `
+          <div class="suggestions">
+            <div class="suggestions-title">Suggestions:</div>
+            ${suggestions.map(s => `<div class="suggestion-item">• ${s}</div>`).join('')}
+          </div>
+        `;
+      }
+    }
+    
+    renderTooltip(tooltip, shadow, maidImageUrl, scoreClass, score, status, warningHTML, suggestionsHTML, element, suggestions);
+  });
+}
+
+function renderTooltip(tooltip, shadow, maidImageUrl, scoreClass, score, status, warningHTML, suggestionsHTML, element, suggestions) {
   
   tooltip.innerHTML = `
     <div class="tooltip-header">
@@ -1099,8 +1262,11 @@ function showDetailedScore(shadow, score, isHate, suggestions, warningMessage = 
       <div class="close-btn">×</div>
     </div>
     <div class="score-display">
-      <div class="score-number ${scoreClass}">${score}</div>
-      <div class="score-label">${status}</div>
+      <img src="${maidImageUrl}" class="maid-mascot" alt="Maid">
+      <div class="score-info">
+        <div class="score-number ${scoreClass}">${score}</div>
+        <div class="score-label">${status}</div>
+      </div>
     </div>
     ${warningHTML}
     ${suggestionsHTML}
@@ -1200,6 +1366,9 @@ function showDetailedScore(shadow, score, isHate, suggestions, warningMessage = 
           }
           
           console.log('✅ Swapped successfully');
+          
+          // Award coins for using rewrite
+          awardCoins(10, 'used a rewrite 🎉');
         } else {
           console.error('❌ Text swap verification failed');
         }
@@ -1677,6 +1846,9 @@ async function filterHateContent() {
           rewrites: result.rewrites || [],
           originalText: text
         });
+        
+        // Award coins for protecting user from hate speech
+        awardCoins(5, 'blocked something bad 🛡️');
       } else {
         console.log('    ✅ Content is safe');
       }
@@ -1932,12 +2104,6 @@ function applyBlurOverlay(element, detectionResult) {
   // Find the best text element to blur
   const targetBlurElement = findSmallestTextElement(element);
   
-  // Make parent element relative for positioning
-  const originalPosition = window.getComputedStyle(element).position;
-  if (originalPosition === 'static') {
-    element.style.position = 'relative';
-  }
-  
   // Apply blur to the target element
   targetBlurElement.classList.add('hate-content-blurred');
   
@@ -1953,11 +2119,49 @@ function applyBlurOverlay(element, detectionResult) {
   
   let isBlurred = true; // Track blur state
   
-  // Create floating FAB button
+  // Create floating FAB button with fixed positioning
   const fab = document.createElement('button');
   fab.className = 'hate-blur-fab';
   fab.innerHTML = '🚨';
   fab.title = 'View reason and unblur';
+  
+  // Calculate position relative to viewport
+  const updateFabPosition = () => {
+    const rect = element.getBoundingClientRect();
+    fab.style.cssText = `
+      position: fixed !important;
+      left: ${rect.right - 48}px !important;
+      top: ${rect.bottom - 48}px !important;
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      background: #e74c3c !important;
+      color: white !important;
+      border: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 18px !important;
+      z-index: 999999 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+      transition: all 0.2s ease !important;
+      pointer-events: auto !important;
+      filter: none !important;
+    `;
+  };
+  
+  updateFabPosition();
+  
+  // Update position on scroll/resize
+  const updateInterval = setInterval(() => {
+    if (!document.body.contains(element)) {
+      clearInterval(updateInterval);
+      if (fab.parentNode) fab.remove();
+      return;
+    }
+    updateFabPosition();
+  }, 100);
   
   // Function to toggle blur state
   const toggleBlur = (shouldBlur) => {
@@ -1970,6 +2174,7 @@ function applyBlurOverlay(element, detectionResult) {
       targetBlurElement.style.userSelect = 'none';
       targetBlurElement.style.pointerEvents = 'none';
       fab.innerHTML = '🚨';
+      const rect = element.getBoundingClientRect();
       fab.style.background = '#e74c3c';
       fab.title = 'View reason and unblur';
     } else {
@@ -1990,7 +2195,7 @@ function applyBlurOverlay(element, detectionResult) {
     e.stopPropagation();
     
     // Remove existing menu if any
-    const existingMenu = element.querySelector('.hate-unblur-menu');
+    const existingMenu = document.querySelector('.hate-unblur-menu');
     if (existingMenu) {
       existingMenu.remove();
       return;
@@ -1999,6 +2204,28 @@ function applyBlurOverlay(element, detectionResult) {
     // Create menu based on current blur state
     const menu = document.createElement('div');
     menu.className = 'hate-unblur-menu';
+    
+    // Calculate position relative to FAB button
+    const fabRect = fab.getBoundingClientRect();
+    const menuTop = fabRect.top - 0; // Position above FAB with some spacing
+    const menuLeft = fabRect.left - 180; // Align to the right of FAB
+    
+    menu.style.cssText = `
+      position: fixed !important;
+      left: ${menuLeft}px !important;
+      top: ${menuTop}px !important;
+      transform: translateY(-100%) translateY(-15px) !important;
+      background: white !important;
+      border: 1px solid #ddd !important;
+      border-radius: 8px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+      padding: 12px !important;
+      min-width: 220px !important;
+      z-index: 1000000 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+      pointer-events: auto !important;
+      filter: none !important;
+    `;
     
     if (isBlurred) {
       // Show menu with Unblur, Rewrite, and Keep Blurred options
@@ -2080,7 +2307,7 @@ function applyBlurOverlay(element, detectionResult) {
       });
     }
     
-    element.appendChild(menu);
+    document.body.appendChild(menu);
     
     // Close menu when clicking outside
     setTimeout(() => {
@@ -2094,8 +2321,8 @@ function applyBlurOverlay(element, detectionResult) {
     }, 100);
   });
   
-  // Append FAB to parent element
-  element.appendChild(fab);
+  // Append FAB to document.body instead of element
+  document.body.appendChild(fab);
   element.__hateOverlay = fab;
   element.__blurredChild = targetBlurElement;
   
